@@ -120,9 +120,9 @@ export default function AdminProductsPage() {
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [filters, setFilters] = useState<ProductFilters>({
     search: "",
-    category: "",
-    status: "",
-    stockStatus: "",
+    category: "all",
+    status: "all",
+    stockStatus: "all",
     priceRange: { min: 0, max: 1000 },
     showLowStock: false
   });
@@ -196,8 +196,8 @@ export default function AdminProductsPage() {
     let filtered = products.filter(product => {
       const matchesSearch = product.name.toLowerCase().includes(filters.search.toLowerCase()) ||
                           product.description.toLowerCase().includes(filters.search.toLowerCase());
-      const matchesCategory = !filters.category || product.category === filters.category;
-      const matchesStatus = !filters.status || product.status === filters.status;
+      const matchesCategory = filters.category === "all" || product.category === filters.category;
+      const matchesStatus = filters.status === "all" || product.status === filters.status;
       const matchesPrice = product.price >= filters.priceRange.min && product.price <= filters.priceRange.max;
       const matchesLowStock = !filters.showLowStock || product.stock <= product.lowStockThreshold;
 
@@ -458,7 +458,7 @@ export default function AdminProductsPage() {
                   <SelectValue placeholder="All Categories" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Categories</SelectItem>
+                  <SelectItem value="all">All Categories</SelectItem>
                   {categories.map(category => (
                     <SelectItem key={category.id} value={category.name}>
                       {category.name} ({category.count})
@@ -477,7 +477,7 @@ export default function AdminProductsPage() {
                   <SelectValue placeholder="All Status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Status</SelectItem>
+                  <SelectItem value="all">All Status</SelectItem>
                   <SelectItem value="active">Active</SelectItem>
                   <SelectItem value="inactive">Inactive</SelectItem>
                 </SelectContent>
@@ -493,7 +493,7 @@ export default function AdminProductsPage() {
                   <SelectValue placeholder="All Stock" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Stock</SelectItem>
+                  <SelectItem value="all">All Stock</SelectItem>
                   <SelectItem value="in-stock">In Stock</SelectItem>
                   <SelectItem value="low-stock">Low Stock</SelectItem>
                   <SelectItem value="out-of-stock">Out of Stock</SelectItem>
