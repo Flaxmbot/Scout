@@ -71,3 +71,21 @@ export const sessions = sqliteTable('sessions', {
   expiresAt: text('expires_at').notNull(),
   createdAt: text('created_at').notNull(),
 });
+
+export const customers = sqliteTable('customers', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  email: text('email').notNull().unique(),
+  name: text('name').notNull(),
+  phone: text('phone'),
+  address: text('address', { mode: 'json' }),
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
+});
+
+export const analytics = sqliteTable('analytics', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  metricName: text('metric_name').notNull(),
+  value: real('value').notNull(),
+  date: text('date').notNull(),
+  createdAt: text('created_at').notNull(),
+});
