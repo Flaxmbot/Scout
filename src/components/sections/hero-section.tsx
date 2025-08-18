@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ChevronLeft, ChevronRight, Pause, Play } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 const slides = [
 {
@@ -62,7 +63,7 @@ const HeroSection = () => {
             <div className="absolute inset-0 flex items-center justify-center z-10">
               <div className="text-center text-white max-w-4xl px-4">
                 <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold font-heading mb-6 tracking-tight">
-                  PREMIUM <span className="text-orange-500">POLO</span> COLLECTION
+                  PREMIUM <span className="text-[#ff6b35]">POLO</span> COLLECTION
                 </h1>
                 <p className="text-lg md:text-xl lg:text-2xl mb-4 tracking-wide opacity-90">
                   Elevate your style with our premium quality polo shirts
@@ -71,18 +72,16 @@ const HeroSection = () => {
                   COMFORT • STYLE • QUALITY
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <Link 
-                    href="/products"
-                    className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-4 rounded-full font-semibold tracking-wider transition-all duration-300 transform hover:scale-105"
-                  >
-                    SHOP NOW
-                  </Link>
-                  <Link 
-                    href="/collections"
-                    className="bg-transparent border-2 border-white text-white hover:bg-white hover:text-black px-8 py-4 rounded-full font-semibold tracking-wider transition-all duration-300"
-                  >
-                    VIEW COLLECTIONS
-                  </Link>
+                  <Button asChild size="lg" className="bg-[#ff6b35] hover:bg-[#ff6b35]/90 text-white px-8 py-4 rounded-full font-semibold tracking-wider transition-all duration-300 transform hover:scale-105 shadow-lg">
+                    <Link href="/products">
+                      SHOP NOW
+                    </Link>
+                  </Button>
+                  <Button asChild variant="outline" size="lg" className="bg-transparent border-2 border-white text-white hover:bg-white hover:text-black px-8 py-4 rounded-full font-semibold tracking-wider transition-all duration-300 shadow-lg">
+                    <Link href="/collections">
+                      VIEW COLLECTIONS
+                    </Link>
+                  </Button>
                 </div>
               </div>
             </div>
