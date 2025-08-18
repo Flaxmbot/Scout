@@ -332,7 +332,7 @@ export default function SignUpPage() {
               <Button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 rounded-lg transition-colors duration-200"
+                className="w-full bg-[#ff6b35] hover:bg-[#ff6b35]/90 text-white font-semibold py-3 rounded-lg transition-all duration-200 hover:scale-[1.02] shadow-lg"
               >
                 {isLoading ? (
                   <div className="flex items-center space-x-2">
@@ -361,7 +361,7 @@ export default function SignUpPage() {
                 type="button"
                 variant="outline"
                 onClick={() => handleSocialSignup("Google")}
-                className="flex items-center justify-center space-x-2 border-gray-300 hover:bg-gray-50"
+                className="flex items-center justify-center space-x-2 border-gray-300 hover:bg-gray-50 hover:border-[#ff6b35] transition-all duration-200"
               >
                 <Chrome className="w-4 h-4" />
                 <span>Google</span>
@@ -370,7 +370,7 @@ export default function SignUpPage() {
                 type="button"
                 variant="outline"
                 onClick={() => handleSocialSignup("Facebook")}
-                className="flex items-center justify-center space-x-2 border-gray-300 hover:bg-gray-50"
+                className="flex items-center justify-center space-x-2 border-gray-300 hover:bg-gray-50 hover:border-[#ff6b35] transition-all duration-200"
               >
                 <Facebook className="w-4 h-4" />
                 <span>Facebook</span>
@@ -383,7 +383,7 @@ export default function SignUpPage() {
                 Already have an account?{" "}
                 <Link
                   href="/login"
-                  className="text-orange-500 hover:text-orange-600 font-medium underline"
+                  className="text-[#ff6b35] hover:text-[#ff6b35]/80 font-medium underline"
                 >
                   Log in
                 </Link>

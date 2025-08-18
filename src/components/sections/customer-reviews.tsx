@@ -4,6 +4,7 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Star } from 'lucide-react';
 
 const CustomerReviews = () => {
@@ -121,7 +122,7 @@ const CustomerReviews = () => {
         {/* Reviews Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {reviews.map((review) => (
-            <Card key={review.id} className="hover:shadow-lg transition-shadow duration-300">
+            <Card key={review.id} className="hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-0 shadow-md">
               <CardContent className="p-6">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-4">
@@ -129,6 +130,7 @@ const CustomerReviews = () => {
                     <Avatar className="w-10 h-10">
                       <AvatarImage src={review.avatar} alt={review.name} />
                       <AvatarFallback className="bg-orange-100 text-orange-600">
+                      <AvatarFallback className="bg-[#ff6b35]/10 text-[#ff6b35] font-semibold">
                         {review.initials}
                       </AvatarFallback>
                     </Avatar>
@@ -170,7 +172,7 @@ const CustomerReviews = () => {
 
         {/* Call to Action */}
         <div className="text-center mt-16">
-          <div className="bg-white rounded-2xl p-8 shadow-lg max-w-2xl mx-auto">
+          <div className="bg-white rounded-2xl p-8 shadow-xl max-w-2xl mx-auto border border-gray-100">
             <h3 className="text-2xl font-bold text-gray-900 mb-4">
               Join Our Happy Customers
             </h3>
@@ -178,9 +180,9 @@ const CustomerReviews = () => {
               Experience the quality and service that makes our customers rave about us.
               Your satisfaction is our guarantee.
             </p>
-            <button className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-3 rounded-lg font-semibold transition-colors duration-200">
+            <Button className="bg-[#ff6b35] hover:bg-[#ff6b35]/90 text-white px-8 py-3 font-semibold transition-all duration-300 hover:scale-105 shadow-lg">
               Shop Now
-            </button>
+            </Button>
           </div>
         </div>
       </div>

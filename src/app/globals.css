@@ -7,36 +7,27 @@
 
 @theme {
   /* Brand Colors */
-  --color-primary-black: #000000;
-  --color-dark-gray: #1a1a1a;
-  --color-white: #ffffff;
-  --color-light-gray: #f5f5f5;
-  --color-blue-accent: #4285f4;
-  --color-warm-orange: #ff6b35;
-  --color-muted-green: #6b8e23;
+  --color-primary: #ff6b35;
+  --color-primary-foreground: #ffffff;
+  --color-secondary: #f1f5f9;
+  --color-secondary-foreground: #0f172a;
+  --color-accent: #f8fafc;
+  --color-accent-foreground: #0f172a;
+  --color-destructive: #ef4444;
+  --color-destructive-foreground: #ffffff;
+  --color-muted: #f1f5f9;
+  --color-muted-foreground: #64748b;
+  --color-card: #ffffff;
+  --color-card-foreground: #0f172a;
+  --color-popover: #ffffff;
+  --color-popover-foreground: #0f172a;
+  --color-border: #e2e8f0;
+  --color-input: #e2e8f0;
+  --color-ring: #ff6b35;
 
-  /* Text Colors */
-  --color-text-on-dark: #ffffff;
-  --color-text-on-light: #000000;
-
-  /* Background Colors */
-  --color-background-light: #f5f5f5;
-  --color-background-dark: #000000;
-  --color-card-background: #ffffff;
-
-  /* Component Colors */
-  --color-sale-badge: #4285f4;
-  --color-button-primary: #ff6b35;
-  --color-button-text: #ffffff;
-  --color-footer-background: #1a1a1a;
-  --color-footer-text: #ffffff;
-  --color-review-card-background: #fff0f5;
-  --color-review-text: #000000;
-  --color-about-background: #e0e8f0;
-  --color-about-text: #000000;
-  --color-newsletter-background: #f5f5f5;
-  --color-newsletter-text: #000000;
-  --color-instagram-background: #fff0f5;
+  /* Background and foreground */
+  --color-background: #ffffff;
+  --color-foreground: #0f172a;
 
   /* Standard Tailwind Color Variables */
   --color-gray-50: #f9fafb;
@@ -76,13 +67,6 @@
   --color-red-600: #dc2626;
   --color-red-800: #991b1b;
 
-  /* Semantic Colors */
-  --color-foreground: var(--color-gray-900);
-  --color-background: var(--color-white);
-  --color-muted: var(--color-gray-500);
-  --color-muted-foreground: var(--color-gray-500);
-  --color-border: var(--color-gray-200);
-
   /* Typography */
   --font-primary: 'Inter', sans-serif;
   --font-heading: 'Oswald', sans-serif;
@@ -118,6 +102,12 @@
   --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
   --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
   --shadow-review-card: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
+
+  /* Animation durations */
+  --duration-150: 150ms;
+  --duration-200: 200ms;
+  --duration-300: 300ms;
+  --duration-500: 500ms;
 }
 
 @layer base {
@@ -125,6 +115,7 @@
     scroll-behavior: smooth;
     font-family: var(--font-primary);
     color: var(--color-foreground);
+    font-feature-settings: "rlig" 1, "calt" 1;
   }
 
   body {
@@ -151,6 +142,11 @@
     display: block;
   }
 
+  /* Smooth transitions for interactive elements */
+  button, a, input, select, textarea {
+    transition: all var(--duration-200) ease-in-out;
+  }
+
   /* Form elements */
   button, input, optgroup, select, textarea {
     font-family: inherit;
@@ -174,11 +170,16 @@
 
   /* Dark mode overrides */
   .dark {
-    --color-foreground: var(--color-white);
+    --color-foreground: #ffffff;
     --color-background: var(--color-gray-900);
-    --color-muted: var(--color-gray-400);
+    --color-card: var(--color-gray-800);
+    --color-card-foreground: #ffffff;
+    --color-popover: var(--color-gray-800);
+    --color-popover-foreground: #ffffff;
+    --color-muted: var(--color-gray-800);
     --color-muted-foreground: var(--color-gray-400);
     --color-border: var(--color-gray-700);
+    --color-input: var(--color-gray-700);
   }
 
   .dark body {
@@ -190,6 +191,30 @@
     color: var(--color-white);
   }
 
+  /* Focus styles */
+  *:focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 2px;
+  }
+
+  /* Scrollbar styling */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: var(--color-muted);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-muted-foreground);
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-primary);
+  }
+
   /* Component styles */
   .section-heading {
     font-size: var(--text-4xl);
@@ -199,8 +224,14 @@
     text-transform: uppercase;
   }
 
+  /* Loading animations */
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
   .product-card {
-    background-color: var(--color-card-background);
+    background-color: var(--color-card);
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-sm);
     overflow: hidden;
@@ -216,13 +247,14 @@
   .product-card-title {
     font-size: var(--text-base);
     font-weight: var(--font-weight-medium);
-    color: var(--color-text-on-light);
+    color: var(--color-card-foreground);
+    transition: color var(--duration-200) ease-in-out;
   }
 
   .product-card-price {
     font-size: var(--text-sm);
     font-weight: var(--font-weight-semibold);
-    color: var(--color-text-on-light);
+    color: var(--color-card-foreground);
   }
 
   .product-card-price.old {
@@ -231,8 +263,8 @@
   }
 
   .sale-badge {
-    background-color: var(--color-sale-badge);
-    color: var(--color-white);
+    background-color: #3b82f6;
+    color: #ffffff;
     font-size: var(--text-xs);
     font-weight: var(--font-weight-bold);
     padding: 0.25rem 0.5rem;
@@ -244,8 +276,8 @@
   }
 
   .btn-primary {
-    background-color: var(--color-button-primary);
-    color: var(--color-button-text);
+    background-color: var(--color-primary);
+    color: var(--color-primary-foreground);
     padding: 0.75rem 1.5rem;
     border-radius: var(--radius-md);
     font-weight: var(--font-weight-semibold);
@@ -254,7 +286,7 @@
   }
 
   .btn-primary:hover {
-    background-color: color-mix(in srgb, var(--color-button-primary) 80%, black);
+    background-color: color-mix(in srgb, var(--color-primary) 90%, black);
   }
 
   .btn-outline {
@@ -268,8 +300,8 @@
   }
 
   .btn-outline:hover {
-    background-color: var(--color-dark-gray);
-    color: var(--color-white);
+    background-color: var(--color-foreground);
+    color: var(--color-background);
   }
 
   .review-card {
@@ -295,16 +327,16 @@
   }
 
   .footer {
-    background-color: var(--color-footer-background);
-    color: var(--color-footer-text);
+    background-color: #1a1a1a;
+    color: #ffffff;
   }
 
   .footer a {
-    color: var(--color-footer-text);
+    color: #ffffff;
     transition: color 0.2s ease;
   }
 
   .footer a:hover {
-    color: var(--color-blue-accent);
+    color: var(--color-primary);
   }
 }

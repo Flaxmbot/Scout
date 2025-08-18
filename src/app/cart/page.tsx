@@ -181,7 +181,7 @@ export default function ShoppingCartPage() {
                 Looks like you haven't added any items to your cart yet. Start shopping to fill it up!
               </p>
               <Link href="/collections">
-                <Button className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-3">
+                <Button className="bg-[#ff6b35] hover:bg-[#ff6b35]/90 text-white px-8 py-3 transition-all duration-300 hover:scale-105 shadow-lg">
                   <ArrowLeft className="h-4 w-4 mr-2" />
                   Continue Shopping
                 </Button>
@@ -361,14 +361,14 @@ export default function ShoppingCartPage() {
 
               <div className="mt-6 space-y-3">
                 <Link href="/checkout">
-                  <Button className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3">
+                  <Button className="w-full bg-[#ff6b35] hover:bg-[#ff6b35]/90 text-white py-3 transition-all duration-300 hover:scale-[1.02] shadow-lg">
                     <CreditCard className="h-4 w-4 mr-2" />
                     Proceed to Checkout
                   </Button>
                 </Link>
                 
                 <Link href="/collections">
-                  <Button variant="outline" className="w-full">
+                  <Button variant="outline" className="w-full hover:border-[#ff6b35] hover:text-[#ff6b35] transition-all duration-300">
                     <ArrowLeft className="h-4 w-4 mr-2" />
                     Continue Shopping
                   </Button>

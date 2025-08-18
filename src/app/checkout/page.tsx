@@ -208,7 +208,7 @@ export default function CheckoutPage() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <div className="w-8 h-8 bg-orange-500 text-white rounded-full flex items-center justify-center text-sm font-bold">
+                  <div className="w-8 h-8 bg-[#ff6b35] text-white rounded-full flex items-center justify-center text-sm font-bold">
                     1
                   </div>
                   Customer Information
@@ -265,7 +265,7 @@ export default function CheckoutPage() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <div className="w-8 h-8 bg-orange-500 text-white rounded-full flex items-center justify-center text-sm font-bold">
+                  <div className="w-8 h-8 bg-[#ff6b35] text-white rounded-full flex items-center justify-center text-sm font-bold">
                     2
                   </div>
                   Shipping Address
@@ -332,7 +332,7 @@ export default function CheckoutPage() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <div className="w-8 h-8 bg-orange-500 text-white rounded-full flex items-center justify-center text-sm font-bold">
+                  <div className="w-8 h-8 bg-[#ff6b35] text-white rounded-full flex items-center justify-center text-sm font-bold">
                     3
                   </div>
                   Payment Method
@@ -340,21 +340,21 @@ export default function CheckoutPage() {
               </CardHeader>
               <CardContent>
                 <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod} className="space-y-4">
-                  <div className="flex items-center space-x-3 p-4 border rounded-lg">
+                  <div className="flex items-center space-x-3 p-4 border rounded-lg hover:border-[#ff6b35] transition-colors">
                     <RadioGroupItem value="card" id="card" />
                     <CreditCard className="w-5 h-5 text-gray-600" />
                     <Label htmlFor="card" className="flex-1 cursor-pointer">
                       Credit/Debit Card
                     </Label>
                   </div>
-                  <div className="flex items-center space-x-3 p-4 border rounded-lg">
+                  <div className="flex items-center space-x-3 p-4 border rounded-lg hover:border-[#ff6b35] transition-colors">
                     <RadioGroupItem value="upi" id="upi" />
                     <Wallet className="w-5 h-5 text-gray-600" />
                     <Label htmlFor="upi" className="flex-1 cursor-pointer">
                       UPI
                     </Label>
                   </div>
-                  <div className="flex items-center space-x-3 p-4 border rounded-lg">
+                  <div className="flex items-center space-x-3 p-4 border rounded-lg hover:border-[#ff6b35] transition-colors">
                     <RadioGroupItem value="bank" id="bank" />
                     <Building2 className="w-5 h-5 text-gray-600" />
                     <Label htmlFor="bank" className="flex-1 cursor-pointer">
@@ -409,7 +409,6 @@ export default function CheckoutPage() {
                             {item.color && (
                               <p className="text-xs text-gray-500">Color: {item.color}</p>
                             )}
-                            <p className="text-sm font-semibold text-orange-600">
                               ₹{item.price.toFixed(2)}
                             </p>
                           </div>
@@ -460,14 +459,14 @@ export default function CheckoutPage() {
                       <Separator />
                       <div className="flex justify-between font-semibold text-lg">
                         <span>Total</span>
-                        <span className="text-orange-600">₹{total.toFixed(2)}</span>
+                        <span className="text-[#ff6b35]">₹{total.toFixed(2)}</span>
                       </div>
                     </div>
 
                     <Button
                       onClick={handlePlaceOrder}
                       disabled={isLoading || cartItems.length === 0}
-                      className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3"
+                      className="w-full bg-[#ff6b35] hover:bg-[#ff6b35]/90 text-white font-semibold py-3 transition-all duration-300 hover:scale-[1.02] shadow-lg"
                     >
                       {isLoading ? (
                         <>

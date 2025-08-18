@@ -418,7 +418,7 @@ export default function ProductDetailPage() {
             <Button
               onClick={handleAddToCart}
               disabled={addingToCart || product.stock === 0 || !selectedSize || !selectedColor}
-              className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 text-lg font-semibold"
+              className="w-full bg-[#ff6b35] hover:bg-[#ff6b35]/90 text-white py-3 text-lg font-semibold transition-all duration-300 hover:scale-[1.02] shadow-lg disabled:hover:scale-100"
               size="lg"
             >
               {addingToCart ? (
@@ -461,6 +461,7 @@ export default function ProductDetailPage() {
                     </div>
                     <div className="p-4">
                       <h3 className="font-medium text-gray-900 mb-2 group-hover:text-orange-600 transition-colors">
+                      <h3 className="font-medium text-gray-900 mb-2 group-hover:text-[#ff6b35] transition-colors">
                         {relatedProduct.name}
                       </h3>
                       <div className="flex items-center gap-2">

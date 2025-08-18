@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 const WaveDivider = () => (
   <div className="bg-white">
@@ -59,7 +60,7 @@ const SmartTechPolos = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-12">
             {products.map((product) => (
               <div key={product.id} className="text-center group">
-                <Link href={product.href} className="block">
+                <Link href={product.href} className="block group">
                   <div className="relative border border-[#E5E5E5] rounded-2xl overflow-hidden aspect-[0.75] mb-4">
                     <Image
                       src={product.image}
@@ -82,11 +83,11 @@ const SmartTechPolos = () => {
                     {product.price}
                   </p>
                 </Link>
-                <Link href={product.href}>
-                  <span className="inline-block border border-black text-black rounded-full px-8 py-2 text-sm font-medium hover:bg-black hover:text-white transition-colors duration-300">
+                <Button asChild variant="outline" className="border-black text-black hover:bg-black hover:text-white rounded-full px-8 py-2 transition-all duration-300 hover:scale-105">
+                  <Link href={product.href}>
                     Choose options
-                  </span>
-                </Link>
+                  </Link>
+                </Button>
               </div>
             ))}
           </div>

@@ -350,7 +350,7 @@ function CollectionsPageContent() {
                       <Badge variant="secondary">{category.productCount} items</Badge>
                     </div>
                     <p className="text-gray-600 text-sm mb-4">{category.description}</p>
-                    <Button className="w-full border border-gray-300 hover:bg-orange-500 hover:text-white hover:border-orange-500 transition-colors">
+                    <Button variant="outline" className="w-full border-gray-300 hover:bg-[#ff6b35] hover:text-white hover:border-[#ff6b35] transition-all duration-300 hover:scale-105">
                       View Collection <ChevronRight className="ml-2 h-4 w-4" />
                     </Button>
                   </CardContent>
@@ -557,8 +557,9 @@ function CollectionsPageContent() {
                       </div>
                       <div className={viewMode === "list" ? "ml-4" : "mt-4"}>
                         <Link href={`/products/${product.slug}`}>
-                          <Button 
-                            className="w-full border border-gray-300 hover:bg-orange-500 hover:text-white hover:border-orange-500 transition-all duration-300"
+                          <Button
+                            variant="outline"
+                            className="w-full border-gray-300 hover:bg-[#ff6b35] hover:text-white hover:border-[#ff6b35] transition-all duration-300 hover:scale-105"
                             disabled={!product.inStock}
                           >
                             {product.inStock ? "Choose options" : "Out of Stock"}

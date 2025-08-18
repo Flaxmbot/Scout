@@ -188,7 +188,7 @@ export default function LoginPage() {
               <Button
                 type="submit"
                 disabled={isLoading}
-                className="w-full h-12 bg-orange-500 hover:bg-orange-600 text-white font-semibold transition-all duration-200 transform hover:scale-[1.02]"
+                className="w-full h-12 bg-[#ff6b35] hover:bg-[#ff6b35]/90 text-white font-semibold transition-all duration-200 transform hover:scale-[1.02] shadow-lg"
               >
                 {isLoading ? (
                   <>
@@ -218,7 +218,7 @@ export default function LoginPage() {
                 variant="outline"
                 onClick={() => handleSocialLogin("Google")}
                 disabled={isLoading}
-                className="h-12 border-gray-300 hover:bg-gray-50 transition-all duration-200"
+                className="h-12 border-gray-300 hover:bg-gray-50 hover:border-[#ff6b35] transition-all duration-200"
               >
                 <Chrome className="mr-2 h-5 w-5" />
                 Google
@@ -228,7 +228,7 @@ export default function LoginPage() {
                 variant="outline"
                 onClick={() => handleSocialLogin("Facebook")}
                 disabled={isLoading}
-                className="h-12 border-gray-300 hover:bg-gray-50 transition-all duration-200"
+                className="h-12 border-gray-300 hover:bg-gray-50 hover:border-[#ff6b35] transition-all duration-200"
               >
                 <Facebook className="mr-2 h-5 w-5" />
                 Facebook
@@ -241,7 +241,7 @@ export default function LoginPage() {
                 Don't have an account?{" "}
                 <Link
                   href="/signup"
-                  className="text-orange-500 hover:text-orange-600 font-semibold transition-colors"
+                  className="text-[#ff6b35] hover:text-[#ff6b35]/80 font-semibold transition-colors"
                 >
                   Sign up
                 </Link>

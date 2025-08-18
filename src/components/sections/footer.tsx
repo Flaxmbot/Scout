@@ -26,7 +26,7 @@ const Footer = () => {
             {/* Left Section: Logo & Navigation */}
             <div className="md:col-span-2">
               <div className="mb-8">
-                <Link href="/" className="inline-block">
+                <Link href="/" className="inline-block hover:opacity-80 transition-opacity">
                   <Image
                     src="https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/test-clones/8eef21f3-4a52-4ae0-bfcf-d495c2edc784-trendifymartclothing-com/assets/images/IMG_2338-1.png?"
                     alt="TrendifyMart Logo"
@@ -40,7 +40,7 @@ const Footer = () => {
                 <ul className="flex flex-wrap gap-x-6 gap-y-3">
                   {navLinks.map((link, index) => (
                     <li key={`${link.name}-${index}`}>
-                      <Link href={link.href} className="hover:text-blue-accent transition-colors duration-300 text-sm">
+                      <Link href={link.href} className="hover:text-[#ff6b35] transition-colors duration-300 text-sm font-medium">
                         {link.name}
                       </Link>
                     </li>
@@ -63,12 +63,12 @@ const Footer = () => {
 
           {/* Bottom section: Copyright & Policies */}
           <div className="mt-16 pt-8 border-t border-gray-700 flex flex-col md:flex-row justify-between items-center text-xs text-gray-400 space-y-4 md:space-y-0">
-            <p className="text-center md:text-left">© 2026, TRENDIFY MART Powered by Shopify</p>
+            <p className="text-center md:text-left">© 2025, TRENDIFY MART Powered by Firebase</p>
             <nav aria-label="Footer policies">
               <ul className="flex flex-wrap justify-center gap-x-4 gap-y-2">
                 {policyLinks.map((link) => (
                   <li key={link.name}>
-                    <Link href={link.href} className="hover:text-white transition-colors duration-300">
+                    <Link href={link.href} className="hover:text-[#ff6b35] transition-colors duration-300 font-medium">
                       {link.name}
                     </Link>
                   </li>
@@ -82,7 +82,7 @@ const Footer = () => {
       {/* Payment Icons Section */}
       <div className="bg-light-gray py-6">
         <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8">
-          <ul className="flex justify-center items-center flex-wrap gap-2.5" role="list" aria-label="Accepted payment methods">
+          <ul className="flex justify-center items-center flex-wrap gap-3" role="list" aria-label="Accepted payment methods">
             <li className="h-10 w-16 bg-[#5a31f4] rounded-md shadow-sm" aria-label="Shop Pay"></li>
             <li className="h-10 w-16 bg-white rounded-md shadow-sm" aria-label="Google Pay"></li>
             <li className="h-10 w-16 bg-black rounded-md shadow-sm" aria-label="Apple Pay"></li>

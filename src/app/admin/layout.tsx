@@ -176,20 +176,21 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               onClick={() => setIsMobileMenuOpen(false)}
               className={cn(
                 "flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-orange-50 dark:hover:bg-gray-800 group",
+                "flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-[#ff6b35]/10 dark:hover:bg-gray-800 group",
                 isActive
-                  ? "bg-orange-100 dark:bg-gray-800 text-orange-600 dark:text-orange-400 shadow-sm"
-                  : "text-gray-700 dark:text-gray-300 hover:text-orange-600 dark:hover:text-orange-400"
+                  ? "bg-[#ff6b35]/10 dark:bg-gray-800 text-[#ff6b35] dark:text-[#ff6b35] shadow-sm"
+                  : "text-gray-700 dark:text-gray-300 hover:text-[#ff6b35] dark:hover:text-[#ff6b35]"
               )}
             >
               <Icon className={cn(
                 "w-5 h-5 transition-colors",
                 isActive 
-                  ? "text-orange-600 dark:text-orange-400" 
-                  : "text-gray-500 dark:text-gray-400 group-hover:text-orange-500"
+                  ? "text-[#ff6b35] dark:text-[#ff6b35]" 
+                  : "text-gray-500 dark:text-gray-400 group-hover:text-[#ff6b35]"
               )} />
               <span>{item.label}</span>
               {isActive && (
-                <div className="w-1.5 h-1.5 bg-orange-500 rounded-full ml-auto" />
+                <div className="w-1.5 h-1.5 bg-[#ff6b35] rounded-full ml-auto" />
               )}
             </Link>
           );
@@ -202,7 +203,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           variant="ghost"
           size="sm"
           onClick={toggleTheme}
-          className="w-full justify-start space-x-3 text-gray-700 dark:text-gray-300 hover:bg-orange-50 dark:hover:bg-gray-800"
+          className="w-full justify-start space-x-3 text-gray-700 dark:text-gray-300 hover:bg-[#ff6b35]/10 dark:hover:bg-gray-800 hover:text-[#ff6b35] transition-all duration-200"
         >
           {theme === 'light' ? (
             <Moon className="w-5 h-5" />
@@ -356,7 +357,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                   {item.href ? (
                     <Link 
                       href={item.href}
-                      className="text-sm font-medium text-gray-500 hover:text-orange-600 dark:text-gray-400 dark:hover:text-orange-400 transition-colors"
+                      className="text-sm font-medium text-gray-500 hover:text-[#ff6b35] dark:text-gray-400 dark:hover:text-[#ff6b35] transition-colors"
                     >
                       {item.label}
                     </Link>

@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 interface Product {
   id: number;
@@ -44,7 +45,7 @@ const FeaturedCollection = () => {
         <div className="mt-12 grid grid-cols-1 gap-y-12 gap-x-8 sm:grid-cols-2 lg:grid-cols-3">
           {products.map((product) => (
             <Link key={product.id} href={product.href} className="group block">
-              <div className="w-full overflow-hidden rounded-xl border border-gray-200 shadow-sm">
+              <div className="w-full overflow-hidden rounded-xl border border-gray-200 shadow-sm hover:shadow-lg transition-shadow duration-300">
                 <div className="relative aspect-[3/4] bg-[#F4F1ED]">
                   <Image
                     src={product.imageSrc}
@@ -63,11 +64,11 @@ const FeaturedCollection = () => {
         </div>
         
         <div className="mt-12 text-center">
-          <Link href="/collections">
-            <button className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-3 rounded-md font-semibold transition-colors duration-300">
+          <Button asChild className="bg-[#ff6b35] hover:bg-[#ff6b35]/90 text-white px-8 py-3 font-semibold transition-all duration-300 hover:scale-105 shadow-lg">
+            <Link href="/collections">
               View All Collections
-            </button>
-          </Link>
+            </Link>
+          </Button>
         </div>
       </div>
     </section>
