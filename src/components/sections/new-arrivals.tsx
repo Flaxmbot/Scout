@@ -19,7 +19,7 @@ const productsData: Product[] = [
     price: 'Rs. 799.00',
     oldPrice: null,
     isSale: false,
-    href: '#',
+    href: '/products/white-tipping-polo',
   },
   {
     name: 'Umber - Tipping Polo',
@@ -28,7 +28,7 @@ const productsData: Product[] = [
     price: 'Rs. 799.00',
     oldPrice: 'Rs. 1,399.00',
     isSale: true,
-    href: '#',
+    href: '/products/umber-tipping-polo',
   },
   {
     name: 'Black - Tipping Polo',
@@ -37,7 +37,7 @@ const productsData: Product[] = [
     price: 'Rs. 799.00',
     oldPrice: 'Rs. 1,499.00',
     isSale: true,
-    href: '#',
+    href: '/products/black-tipping-polo',
   },
   {
     name: 'Olive Green - Tipping Polo',
@@ -46,7 +46,7 @@ const productsData: Product[] = [
     price: 'Rs. 799.00',
     oldPrice: null,
     isSale: false,
-    href: '#',
+    href: '/products/olive-green-tipping-polo',
   },
 ];
 

@@ -1,63 +1,22 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { ShoppingCart, Search, Menu, X, User, LogOut } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { toast } from 'sonner';
+import { useAuth } from '@/hooks/use-auth';
+import { useCart } from '@/hooks/use-cart';
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [user, setUser] = useState(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const router = useRouter();
-
-  useEffect(() => {
-    checkAuthStatus();
-  }, []);
-
-  const checkAuthStatus = async () => {
-    try {
-      const token = localStorage.getItem('session_token');
-      if (!token) return;
-
-      const response = await fetch('/api/auth/me', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setUser(data.user);
-      } else {
-        localStorage.removeItem('session_token');
-      }
-    } catch (error) {
-      console.error('Auth check failed:', error);
-    }
-  };
+  const { user, logout } = useAuth();
+  const { totalItems } = useCart();
 
   const handleLogout = async () => {
-    try {
-      const token = localStorage.getItem('session_token');
-      if (token) {
-        await fetch('/api/auth/logout', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-      }
-      localStorage.removeItem('session_token');
-      setUser(null);
-      toast.success('Logged out successfully');
-      router.push('/');
-    } catch (error) {
-      console.error('Logout failed:', error);
-      localStorage.removeItem('session_token');
-      setUser(null);
-    }
+    await logout();
+    router.push('/');
   };
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
@@ -104,7 +63,7 @@ export function Header() {
             >
               <ShoppingCart className="h-5 w-5" />
               <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                0
+                {totalItems}
               </span>
             </Link>
 

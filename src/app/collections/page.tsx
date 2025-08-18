@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Search, Filter, Grid, List, ChevronDown, ChevronRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -40,7 +40,7 @@ interface Product {
   isOnSale?: boolean;
 }
 
-export default function CollectionsPage() {
+function CollectionsPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   
@@ -604,5 +604,36 @@ export default function CollectionsPage() {
         )}
       </div>
     </div>
+  );
+}
+
+function CollectionsPageSkeleton() {
+  return (
+    <div className="min-h-screen bg-white">
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex flex-col space-y-8">
+          <div className="h-8 w-64 bg-gray-200 animate-pulse rounded"></div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="overflow-hidden border rounded-lg">
+                <div className="h-64 w-full bg-gray-200 animate-pulse"></div>
+                <div className="p-4">
+                  <div className="h-4 w-3/4 mb-2 bg-gray-200 animate-pulse rounded"></div>
+                  <div className="h-6 w-1/2 bg-gray-200 animate-pulse rounded"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function CollectionsPage() {
+  return (
+    <Suspense fallback={<CollectionsPageSkeleton />}>
+      <CollectionsPageContent />
+    </Suspense>
   );
 }

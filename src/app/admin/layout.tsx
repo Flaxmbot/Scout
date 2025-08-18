@@ -19,7 +19,8 @@ import {
   Sun, 
   Moon, 
   LogOut, 
-  User as UserIcon 
+  User as UserIcon,
+  CreditCard
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -34,6 +35,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/hooks/use-auth';
+import { toast } from 'sonner';
 
 interface NavigationItem {
   id: string;
@@ -57,6 +60,7 @@ const navigationItems: NavigationItem[] = [
   { id: 'orders', label: 'Orders', href: '/admin/orders', icon: ShoppingCart },
   { id: 'customers', label: 'Customers', href: '/admin/customers', icon: Users },
   { id: 'users', label: 'Users', href: '/admin/users', icon: UserCheck },
+  { id: 'transactions', label: 'Transactions', href: '/admin/transactions', icon: CreditCard },
   { id: 'analytics', label: 'Analytics', href: '/admin/analytics', icon: BarChart },
   { id: 'settings', label: 'Settings', href: '/admin/settings', icon: Settings },
 ];
@@ -64,6 +68,7 @@ const navigationItems: NavigationItem[] = [
 export default function AdminLayout({ children }: AdminLayoutProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const { user, logout, isLoading, isAuthenticated } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [searchQuery, setSearchQuery] = useState('');
@@ -76,6 +81,33 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       document.documentElement.classList.toggle('dark', savedTheme === 'dark');
     }
   }, []);
+
+  // Redirect non-authenticated or non-admin users
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      router.push('/login?redirect=' + encodeURIComponent(pathname));
+    } else if (!isLoading && isAuthenticated && user?.role !== 'admin') {
+      router.push('/');
+      toast.error('Access denied. Admin privileges required.');
+    }
+  }, [isLoading, isAuthenticated, user, router, pathname]);
+
+  // Show loading while checking authentication
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render admin content if user is not authenticated or not admin
+  if (!isAuthenticated || user?.role !== 'admin') {
+    return null;
+  }
 
   const toggleTheme = () => {
     const newTheme = theme === 'light' ? 'dark' : 'light';
@@ -99,9 +131,14 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     return breadcrumbs;
   };
 
-  const handleLogout = () => {
-    // Implement logout logic
-    router.push('/login');
+  const handleLogout = async () => {
+    try {
+      await logout();
+      router.push('/login');
+    } catch (error) {
+      console.error('Logout failed:', error);
+      toast.error('Failed to logout. Please try again.');
+    }
   };
 
   const handleSearch = (e: React.FormEvent) => {
@@ -274,7 +311,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                   <Avatar className="h-8 w-8">
                     <AvatarImage src="/admin-avatar.jpg" alt="Admin" />
                     <AvatarFallback className="bg-orange-100 text-orange-600">
-                      AD
+                      {user?.name ? user.name.split(' ').map(n => n[0]).join('').toUpperCase() : 'AD'}
                     </AvatarFallback>
                   </Avatar>
                 </Button>
@@ -282,9 +319,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               <DropdownMenuContent className="w-56" align="end" forceMount>
                 <div className="flex items-center justify-start gap-2 p-2">
                   <div className="flex flex-col space-y-1 leading-none">
-                    <p className="font-medium">Admin User</p>
+                    <p className="font-medium">{user?.name || 'Loading...'}</p>
                     <p className="w-[200px] truncate text-sm text-muted-foreground">
-                      admin@trendifymart.com
+                      {user?.email || 'Loading...'}
                     </p>
                   </div>
                 </div>

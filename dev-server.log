@@ -1,0 +1,66 @@
+$ next dev --turbopack
+   ▲ Next.js 15.3.5 (Turbopack)
+   - Local:        http://localhost:3000
+   - Network:      http://172.17.0.2:3000
+   - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 986ms
+ ○ Compiling /api/products ...
+ ✓ Compiled /api/products in 1279ms
+🧪 Using Mock Firebase for development testing
+ GET /api/products 200 in 1450ms
+ ✓ Compiled /api/categories in 469ms
+ GET /api/categories 200 in 507ms
+ ○ Compiling /api/auth/register ...
+ ✓ Compiled /api/auth/register in 1507ms
+[2025-08-17T12:58:52.554Z]  @firebase/firestore: Firestore (12.1.0): GrpcConnection RPC 'Write' stream 0x7e4c7ce8 error. Code: 7 Message: 7 PERMISSION_DENIED: Missing or insufficient permissions.
+Registration error: Error: Authentication failed. Please try again
+    at AuthService.register (src/lib/firebase/services/auth.ts:44:12)
+    at async POST (src/app/api/auth/register/route.ts:54:21)
+  42 |       };
+  43 |     } catch (error: any) {
+> 44 |       throw new Error(this.getAuthErrorMessage(error.code));
+     |            ^
+  45 |     }
+  46 |   }
+  47 |
+ POST /api/auth/register 500 in 4554ms
+ ○ Compiling /api/auth/me ...
+ ✓ Compiled /api/auth/me in 875ms
+ GET /api/auth/me 401 in 909ms
+ ○ Compiling /api/orders ...
+ ✓ Compiled /api/orders in 534ms
+ HEAD /api/orders 200 in 563ms
+ ○ Compiling /api/cart-items ...
+ ✓ Compiled /api/cart-items in 508ms
+ HEAD /api/cart-items 200 in 532ms
+ ○ Compiling /admin ...
+ ✓ Compiled /admin in 9.6s
+ HEAD /admin 200 in 11421ms
+ ○ Compiling / ...
+ ✓ Compiled / in 4.2s
+Image with src "https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/test-clones/8eef21f3-4a52-4ae0-bfcf-d495c2edc784-trendifymartclothing-com/assets/images/Black_and_White_Modern_Grunge_Plastic_Texture_Streetwear_Landscape_Banner-2.png?" has legacy prop "layout". Did you forget to run the codemod?
+Read more: https://nextjs.org/docs/messages/next-image-upgrade-to-13
+Image with src "https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/test-clones/8eef21f3-4a52-4ae0-bfcf-d495c2edc784-trendifymartclothing-com/assets/images/Black_and_White_Modern_Grunge_Plastic_Texture_Streetwear_Landscape_Banner-2.png?" has legacy prop "objectFit". Did you forget to run the codemod?
+Read more: https://nextjs.org/docs/messages/next-image-upgrade-to-13
+Image with src "https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/test-clones/8eef21f3-4a52-4ae0-bfcf-d495c2edc784-trendifymartclothing-com/assets/images/Black_and_White_Modern_Grunge_Plastic_Texture_Streetwear_Landscape_Banner-2.png?" has legacy prop "objectPosition". Did you forget to run the codemod?
+Read more: https://nextjs.org/docs/messages/next-image-upgrade-to-13
+ GET / 200 in 4940ms
+ ⨯ ./Harshjii/trendify-mart-clone/src/lib/firebase/admin.ts:84:9
+Parsing ecmascript source code failed
+[0m [90m 82 |[39m         }[33m;[39m[0m
+[0m [90m 83 |[39m[0m
+[0m[31m[1m>[22m[39m[90m 84 |[39m         [36mexport[39m [36mconst[39m adminDB [33m=[39m mockFirestore[33m;[39m[0m
+[0m [90m    |[39m         [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[0m
+[0m [90m 85 |[39m         [36mexport[39m [36mconst[39m adminAuth [33m=[39m {[0m
+[0m [90m 86 |[39m           verifyIdToken[33m:[39m [36masync[39m (token[33m:[39m string) [33m=>[39m ({[0m
+[0m [90m 87 |[39m             uid[33m:[39m [32m'mock-user-id'[39m[33m,[39m[0m
+
+'import', and 'export' cannot be used outside of module code
+
+
+ ○ Compiling /_error ...
+ ✓ Compiled /_error in 1487ms
+ GET /api/products 500 in 1797ms
+[?25h

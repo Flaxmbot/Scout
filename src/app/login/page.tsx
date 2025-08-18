@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Eye, EyeOff, Mail, Lock, Chrome, Facebook, ArrowLeft, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -18,6 +19,18 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({ email: "", password: "" });
   const router = useRouter();
+  const { user, login } = useAuth();
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      if (user.role === 'admin') {
+        router.push('/admin');
+      } else {
+        router.push('/');
+      }
+    }
+  }, [user, router]);
 
   const validateForm = () => {
     const newErrors = { email: "", password: "" };
@@ -51,33 +64,11 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        // Store session token
-        localStorage.setItem("session_token", data.sessionToken);
-        
-        toast.success("Login successful! Welcome back to TrendifyMart");
-
-        // Redirect based on user role
-        if (data.user?.role === "admin") {
-          router.push("/admin");
-        } else {
-          router.push("/");
-        }
-      } else {
-        toast.error(data.error || "Invalid email or password");
-      }
-    } catch (error) {
-      toast.error("Something went wrong. Please try again.");
+      await login(email, password);
+      toast.success("Login successful! Welcome back to TrendifyMart");
+      // The auth context will handle the redirect based on user role
+    } catch (error: any) {
+      toast.error(error.message || "Invalid email or password");
     } finally {
       setIsLoading(false);
     }

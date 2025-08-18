@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -18,8 +20,12 @@ import {
   TrendingDown,
   Activity,
   RefreshCw,
-  AlertTriangle
+  AlertTriangle,
+  BarChart3,
+  Calendar,
+  Target
 } from 'lucide-react';
+import AnalyticsCharts from '@/components/admin/analytics-charts';
 
 interface DashboardData {
   overview: {
@@ -58,6 +64,7 @@ interface RecentOrder {
 }
 
 const AdminDashboard = () => {
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
@@ -110,7 +117,10 @@ const AdminDashboard = () => {
     fetchDashboardData();
   };
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status: string | undefined | null) => {
+    // Provide a default status if undefined or null
+    const safeStatus = status || 'pending';
+    
     const statusColors = {
       pending: 'bg-yellow-100 text-yellow-800 hover:bg-yellow-100',
       processing: 'bg-blue-100 text-blue-800 hover:bg-blue-100',
@@ -119,11 +129,11 @@ const AdminDashboard = () => {
       cancelled: 'bg-red-100 text-red-800 hover:bg-red-100',
     };
 
-    const colorClass = statusColors[status as keyof typeof statusColors] || 'bg-gray-100 text-gray-800';
+    const colorClass = statusColors[safeStatus as keyof typeof statusColors] || 'bg-gray-100 text-gray-800';
 
     return (
       <Badge className={colorClass}>
-        {status.charAt(0).toUpperCase() + status.slice(1)}
+        {safeStatus.charAt(0).toUpperCase() + safeStatus.slice(1)}
       </Badge>
     );
   };
@@ -268,7 +278,7 @@ const AdminDashboard = () => {
               <CardTitle>Recent Orders</CardTitle>
               <CardDescription>Latest orders from your customers</CardDescription>
             </div>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={() => router.push('/admin/orders')}>
               <Eye className="w-4 h-4 mr-2" />
               View All
             </Button>
@@ -319,19 +329,35 @@ const AdminDashboard = () => {
               <CardDescription>Common management tasks</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
-              <Button className="w-full justify-start" variant="outline">
+              <Button 
+                className="w-full justify-start" 
+                variant="outline"
+                onClick={() => router.push('/admin/products')}
+              >
                 <Plus className="mr-2 h-4 w-4" />
                 Add New Product
               </Button>
-              <Button className="w-full justify-start" variant="outline">
+              <Button 
+                className="w-full justify-start" 
+                variant="outline"
+                onClick={() => router.push('/admin/orders')}
+              >
                 <Eye className="mr-2 h-4 w-4" />
                 View All Orders
               </Button>
-              <Button className="w-full justify-start" variant="outline">
+              <Button 
+                className="w-full justify-start" 
+                variant="outline"
+                onClick={() => router.push('/admin/users')}
+              >
                 <UserCog className="mr-2 h-4 w-4" />
                 Manage Users
               </Button>
-              <Button className="w-full justify-start" variant="outline">
+              <Button 
+                className="w-full justify-start" 
+                variant="outline"
+                onClick={() => router.push('/admin/analytics')}
+              >
                 <Package className="mr-2 h-4 w-4" />
                 Inventory Report
               </Button>
@@ -359,7 +385,12 @@ const AdminDashboard = () => {
                     </div>
                   ))}
                   {lowStockProducts.length > 3 && (
-                    <Button variant="link" size="sm" className="text-orange-600 p-0 h-auto">
+                    <Button 
+                      variant="link" 
+                      size="sm" 
+                      className="text-orange-600 p-0 h-auto"
+                      onClick={() => router.push('/admin/products?filter=low-stock')}
+                    >
                       View {lowStockProducts.length - 3} more items
                     </Button>
                   )}
@@ -370,7 +401,80 @@ const AdminDashboard = () => {
         </div>
       </div>
 
-      {/* Top Products & Order Status */}
+      {/* Analytics Charts */}
+      {!loading && dashboardData && (
+        <AnalyticsCharts 
+          monthlyRevenue={dashboardData.monthlyRevenue || []}
+          ordersByStatus={dashboardData.ordersByStatus || {}}
+          topSellingProducts={dashboardData.topSellingProducts || []}
+        />
+      )}
+
+      {/* Additional Analytics Cards */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Performance Metrics */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Monthly Growth</CardTitle>
+            <BarChart3 className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <Skeleton className="h-8 w-16" />
+            ) : (
+              <>
+                <div className="text-2xl font-bold">+12.5%</div>
+                <div className="flex items-center text-xs text-green-600">
+                  <TrendingUp className="w-3 h-3 mr-1" />
+                  Revenue growth this month
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Conversion Rate</CardTitle>
+            <Target className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <Skeleton className="h-8 w-16" />
+            ) : (
+              <>
+                <div className="text-2xl font-bold">3.2%</div>
+                <div className="flex items-center text-xs text-green-600">
+                  <TrendingUp className="w-3 h-3 mr-1" />
+                  +0.3% from last month
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Customer Retention</CardTitle>
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <Skeleton className="h-8 w-16" />
+            ) : (
+              <>
+                <div className="text-2xl font-bold">68%</div>
+                <div className="flex items-center text-xs text-green-600">
+                  <TrendingUp className="w-3 h-3 mr-1" />
+                  +5% improvement
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Quick Summary Tables */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Top Selling Products */}
         <Card>
@@ -390,7 +494,7 @@ const AdminDashboard = () => {
                     <Skeleton className="h-4 w-20" />
                   </div>
                 ))
-              ) : dashboardData?.topSellingProducts.length > 0 ? (
+              ) : dashboardData?.topSellingProducts && dashboardData.topSellingProducts.length > 0 ? (
                 dashboardData.topSellingProducts.slice(0, 5).map((product, index) => (
                   <div key={product.productId} className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">

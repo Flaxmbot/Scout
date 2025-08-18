@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/db';
-import { products } from '@/db/schema';
-import { eq, like, and, or, desc, asc } from 'drizzle-orm';
+import { ProductsService } from '@/lib/firebase/services';
+import { Product } from '@/lib/firebase/types';
 
 export async function GET(request: NextRequest) {
   try {
@@ -10,30 +9,19 @@ export async function GET(request: NextRequest) {
 
     // Single product by ID
     if (id) {
-      if (!id || isNaN(parseInt(id))) {
-        return NextResponse.json({ 
-          error: "Valid ID is required",
-          code: "INVALID_ID" 
-        }, { status: 400 });
-      }
+      const product = await ProductsService.getById(id);
 
-      const product = await db.select()
-        .from(products)
-        .where(eq(products.id, parseInt(id)))
-        .limit(1);
-
-      if (product.length === 0) {
+      if (!product) {
         return NextResponse.json({ 
           error: 'Product not found' 
         }, { status: 404 });
       }
 
-      return NextResponse.json(product[0]);
+      return NextResponse.json(product);
     }
 
     // List products with filtering and pagination
     const limit = Math.min(parseInt(searchParams.get('limit') || '10'), 100);
-    const offset = parseInt(searchParams.get('offset') || '0');
     const search = searchParams.get('search');
     const category = searchParams.get('category');
     const color = searchParams.get('color');
@@ -42,62 +30,18 @@ export async function GET(request: NextRequest) {
     const sort = searchParams.get('sort') || 'createdAt';
     const order = searchParams.get('order') || 'desc';
 
-    let query = db.select().from(products);
+    const result = await ProductsService.getAll({
+      limit,
+      search: search || undefined,
+      category: category || undefined,
+      color: color || undefined,
+      size: size || undefined,
+      isFeatured: isFeatured ? isFeatured === 'true' : undefined,
+      sort: sort as any,
+      order: order as any
+    });
 
-    // Build where conditions
-    const conditions = [];
-
-    if (search) {
-      conditions.push(
-        or(
-          like(products.name, `%${search}%`),
-          like(products.category, `%${search}%`),
-          like(products.description, `%${search}%`)
-        )
-      );
-    }
-
-    if (category) {
-      conditions.push(eq(products.category, category));
-    }
-
-    if (color) {
-      conditions.push(eq(products.color, color));
-    }
-
-    if (size) {
-      conditions.push(eq(products.size, size));
-    }
-
-    if (isFeatured !== null && isFeatured !== undefined) {
-      conditions.push(eq(products.isFeatured, isFeatured === 'true'));
-    }
-
-    if (conditions.length > 0) {
-      query = query.where(and(...conditions));
-    }
-
-    // Apply sorting
-    const orderDirection = order === 'asc' ? asc : desc;
-    switch (sort) {
-      case 'name':
-        query = query.orderBy(orderDirection(products.name));
-        break;
-      case 'price':
-        query = query.orderBy(orderDirection(products.price));
-        break;
-      case 'category':
-        query = query.orderBy(orderDirection(products.category));
-        break;
-      case 'createdAt':
-      default:
-        query = query.orderBy(orderDirection(products.createdAt));
-        break;
-    }
-
-    const results = await query.limit(limit).offset(offset);
-
-    return NextResponse.json(results);
+    return NextResponse.json(result.products);
   } catch (error) {
     console.error('GET error:', error);
     return NextResponse.json({ 
@@ -147,7 +91,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Sanitize and prepare data
-    const productData = {
+    const productData: Omit<Product, 'id' | 'createdAt'> = {
       name: body.name.trim(),
       description: body.description ? body.description.trim() : null,
       price: body.price,
@@ -157,15 +101,12 @@ export async function POST(request: NextRequest) {
       color: body.color.trim(),
       size: body.size.trim(),
       stockQuantity: body.stockQuantity || 0,
-      isFeatured: body.isFeatured || false,
-      createdAt: new Date().toISOString()
+      isFeatured: body.isFeatured || false
     };
 
-    const newProduct = await db.insert(products)
-      .values(productData)
-      .returning();
+    const newProduct = await ProductsService.create(productData);
 
-    return NextResponse.json(newProduct[0], { status: 201 });
+    return NextResponse.json(newProduct, { status: 201 });
   } catch (error) {
     console.error('POST error:', error);
     return NextResponse.json({ 
@@ -179,23 +120,11 @@ export async function PUT(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
 
-    if (!id || isNaN(parseInt(id))) {
+    if (!id) {
       return NextResponse.json({ 
         error: "Valid ID is required",
         code: "INVALID_ID" 
       }, { status: 400 });
-    }
-
-    // Check if product exists
-    const existingProduct = await db.select()
-      .from(products)
-      .where(eq(products.id, parseInt(id)))
-      .limit(1);
-
-    if (existingProduct.length === 0) {
-      return NextResponse.json({ 
-        error: 'Product not found' 
-      }, { status: 404 });
     }
 
     const body = await request.json();
@@ -237,7 +166,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Prepare update data
-    const updateData: any = {};
+    const updateData: Partial<Omit<Product, 'id' | 'createdAt'>> = {};
 
     if (body.name !== undefined) updateData.name = body.name.trim();
     if (body.description !== undefined) updateData.description = body.description ? body.description.trim() : null;
@@ -250,14 +179,14 @@ export async function PUT(request: NextRequest) {
     if (body.stockQuantity !== undefined) updateData.stockQuantity = body.stockQuantity;
     if (body.isFeatured !== undefined) updateData.isFeatured = body.isFeatured;
 
-    const updatedProduct = await db.update(products)
-      .set(updateData)
-      .where(eq(products.id, parseInt(id)))
-      .returning();
+    const updatedProduct = await ProductsService.update(id, updateData);
 
-    return NextResponse.json(updatedProduct[0]);
+    return NextResponse.json(updatedProduct);
   } catch (error) {
     console.error('PUT error:', error);
+    if (error instanceof Error && error.message === 'Product not found') {
+      return NextResponse.json({ error: error.message }, { status: 404 });
+    }
     return NextResponse.json({ 
       error: 'Internal server error: ' + error 
     }, { status: 500 });
@@ -269,35 +198,24 @@ export async function DELETE(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
 
-    if (!id || isNaN(parseInt(id))) {
+    if (!id) {
       return NextResponse.json({ 
         error: "Valid ID is required",
         code: "INVALID_ID" 
       }, { status: 400 });
     }
 
-    // Check if product exists
-    const existingProduct = await db.select()
-      .from(products)
-      .where(eq(products.id, parseInt(id)))
-      .limit(1);
-
-    if (existingProduct.length === 0) {
-      return NextResponse.json({ 
-        error: 'Product not found' 
-      }, { status: 404 });
-    }
-
-    const deletedProduct = await db.delete(products)
-      .where(eq(products.id, parseInt(id)))
-      .returning();
+    const deletedProduct = await ProductsService.delete(id);
 
     return NextResponse.json({
       message: 'Product deleted successfully',
-      product: deletedProduct[0]
+      product: deletedProduct
     });
   } catch (error) {
     console.error('DELETE error:', error);
+    if (error instanceof Error && error.message === 'Product not found') {
+      return NextResponse.json({ error: error.message }, { status: 404 });
+    }
     return NextResponse.json({ 
       error: 'Internal server error: ' + error 
     }, { status: 500 });

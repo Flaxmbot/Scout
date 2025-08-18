@@ -61,15 +61,29 @@ const HeroSection = () => {
             {/* Hero Overlay Content */}
             <div className="absolute inset-0 flex items-center justify-center z-10">
               <div className="text-center text-white max-w-4xl px-4">
-                <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold font-heading mb-4 tracking-tight !whitespace-pre-line !whitespace-pre-line">
-
-              </h1>
-                <p className="text-lg md:text-xl lg:text-2xl mb-2 tracking-wide !whitespace-pre-line">
-
-              </p>
-                <p className="text-sm md:text-base lg:text-lg mb-8 font-light tracking-widest !whitespace-pre-line">FIY
-
-              </p>
+                <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold font-heading mb-6 tracking-tight">
+                  PREMIUM <span className="text-orange-500">POLO</span> COLLECTION
+                </h1>
+                <p className="text-lg md:text-xl lg:text-2xl mb-4 tracking-wide opacity-90">
+                  Elevate your style with our premium quality polo shirts
+                </p>
+                <p className="text-sm md:text-base lg:text-lg mb-8 font-light tracking-widest opacity-80">
+                  COMFORT • STYLE • QUALITY
+                </p>
+                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                  <Link 
+                    href="/products"
+                    className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-4 rounded-full font-semibold tracking-wider transition-all duration-300 transform hover:scale-105"
+                  >
+                    SHOP NOW
+                  </Link>
+                  <Link 
+                    href="/collections"
+                    className="bg-transparent border-2 border-white text-white hover:bg-white hover:text-black px-8 py-4 rounded-full font-semibold tracking-wider transition-all duration-300"
+                  >
+                    VIEW COLLECTIONS
+                  </Link>
+                </div>
               </div>
             </div>
           </div>

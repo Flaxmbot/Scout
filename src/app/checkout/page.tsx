@@ -11,16 +11,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2, CreditCard, Wallet, Building2, ShoppingBag, Minus, Plus } from "lucide-react";
 import { toast } from "sonner";
-
-interface CartItem {
-  id: string;
-  name: string;
-  price: number;
-  image: string;
-  quantity: number;
-  size?: string;
-  color?: string;
-}
+import { useCart } from "@/hooks/use-cart";
 
 interface CustomerInfo {
   firstName: string;
@@ -40,7 +31,6 @@ interface ShippingAddress {
 interface OrderRequest {
   customerInfo: CustomerInfo;
   shippingAddress: ShippingAddress;
-  items: CartItem[];
   subtotal: number;
   shipping: number;
   total: number;
@@ -49,7 +39,7 @@ interface OrderRequest {
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const { items: cartItems, totalItems, totalPrice, updateQuantity, removeItem, clearCart, isLoading: cartLoading } = useCart();
   const [isLoading, setIsLoading] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("card");
   
@@ -70,30 +60,13 @@ export default function CheckoutPage() {
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // Redirect to home if cart is empty after loading
   useEffect(() => {
-    // Mock cart data
-    const mockItems: CartItem[] = [
-      {
-        id: "1",
-        name: "Olive Green Tipping Polo",
-        price: 599,
-        image: "https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/test-clones/8eef21f3-4a52-4ae0-bfcf-d495c2edc784-trendifymartclothing-com/assets/images/9_1_9c506c3c-578f-44ce-bd09-c42f6524bacc-12.jpg",
-        quantity: 2,
-        size: "M",
-        color: "Green",
-      },
-      {
-        id: "2",
-        name: "Executive Pocket Polo",
-        price: 799,
-        image: "https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/test-clones/8eef21f3-4a52-4ae0-bfcf-d495c2edc784-trendifymartclothing-com/assets/images/8_1-20.jpg",
-        quantity: 1,
-        size: "L",
-        color: "Navy",
-      }
-    ];
-    setCartItems(mockItems);
-  }, []);
+    if (!cartLoading && cartItems.length === 0) {
+      toast.error("Your cart is empty");
+      router.push("/");
+    }
+  }, [cartItems.length, cartLoading, router]);
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -139,21 +112,25 @@ export default function CheckoutPage() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const updateQuantity = (id: string, newQuantity: number) => {
+  const handleUpdateQuantity = async (id: string, newQuantity: number) => {
     if (newQuantity < 1) return;
-    
-    const updatedItems = cartItems.map(item =>
-      item.id === id ? { ...item, quantity: newQuantity } : item
-    );
-    setCartItems(updatedItems);
+    try {
+      await updateQuantity(id, newQuantity);
+    } catch (error) {
+      toast.error("Failed to update quantity");
+    }
   };
 
-  const removeItem = (id: string) => {
-    const updatedItems = cartItems.filter(item => item.id !== id);
-    setCartItems(updatedItems);
+  const handleRemoveItem = async (id: string) => {
+    try {
+      await removeItem(id);
+      toast.success("Item removed from cart");
+    } catch (error) {
+      toast.error("Failed to remove item");
+    }
   };
 
-  const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const subtotal = totalPrice;
   const shipping = subtotal > 1000 ? 0 : 99;
   const total = subtotal + shipping;
 
@@ -166,24 +143,45 @@ export default function CheckoutPage() {
     setIsLoading(true);
 
     try {
-      const orderData: OrderRequest = {
-        customerInfo,
-        shippingAddress,
-        items: cartItems,
-        subtotal,
-        shipping,
-        total,
-        paymentMethod,
+
+      // Create order via API
+      const orderPayload = {
+        customerName: `${customerInfo.firstName} ${customerInfo.lastName}`,
+        customerEmail: customerInfo.email,
+        customerPhone: customerInfo.phone,
+        shippingAddress: `${shippingAddress.address}, ${shippingAddress.city}, ${shippingAddress.state} ${shippingAddress.postalCode}, ${shippingAddress.country}`,
+        totalAmount: total,
+        status: 'pending',
+        items: cartItems.map(item => ({
+          productId: item.productId,
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity,
+          size: item.size,
+          color: item.color
+        }))
       };
 
-      // Mock API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(orderPayload),
+      });
 
-      // Clear cart
-      setCartItems([]);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to place order');
+      }
+
+      const order = await response.json();
+      
+      // Clear cart after successful order
+      await clearCart();
       
       // Show success message
-      toast.success("Order placed successfully!");
+      toast.success("Order placed successfully! Order ID: " + order.id);
       
       // Redirect to home
       router.push("/");
@@ -419,7 +417,7 @@ export default function CheckoutPage() {
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                              onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
                               disabled={item.quantity <= 1}
                             >
                               <Minus className="w-3 h-3" />
@@ -428,9 +426,17 @@ export default function CheckoutPage() {
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                              onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
                             >
                               <Plus className="w-3 h-3" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => handleRemoveItem(item.id)}
+                              className="ml-2"
+                            >
+                              Remove
                             </Button>
                           </div>
                         </div>

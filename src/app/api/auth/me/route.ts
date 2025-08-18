@@ -1,96 +1,51 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/db';
-import { users, sessions } from '@/db/schema';
-import { eq, lt } from 'drizzle-orm';
+import { AuthService } from '@/lib/firebase';
 
 export async function GET(request: NextRequest) {
   try {
-    // Extract token from Authorization header
+    // Get authorization header
     const authHeader = request.headers.get('authorization');
-    
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json({ 
-        error: "Authorization token is required",
-        code: "MISSING_TOKEN" 
-      }, { status: 401 });
-    }
-
-    const token = authHeader.substring(7);
+    const token = AuthService.extractTokenFromHeader(authHeader);
 
     if (!token) {
-      return NextResponse.json({ 
-        error: "Valid authorization token is required",
-        code: "INVALID_TOKEN" 
+      return NextResponse.json({
+        error: "Authorization token is required",
+        code: "MISSING_TOKEN"
       }, { status: 401 });
     }
 
-    // Clean up expired sessions first
-    const now = new Date().toISOString();
-    await db.delete(sessions).where(lt(sessions.expiresAt, now));
-
-    // Find session with user info
-    const sessionResult = await db
-      .select({
-        sessionId: sessions.id,
-        sessionToken: sessions.token,
-        sessionExpiresAt: sessions.expiresAt,
-        sessionCreatedAt: sessions.createdAt,
-        userId: users.id,
-        userEmail: users.email,
-        userName: users.name,
-        userRole: users.role,
-        userCreatedAt: users.createdAt,
-        userUpdatedAt: users.updatedAt
-      })
-      .from(sessions)
-      .innerJoin(users, eq(sessions.userId, users.id))
-      .where(eq(sessions.token, token))
-      .limit(1);
-
-    if (sessionResult.length === 0) {
-      return NextResponse.json({ 
-        error: "Invalid or expired session token",
-        code: "INVALID_SESSION" 
-      }, { status: 401 });
-    }
-
-    const result = sessionResult[0];
-
-    // Check if session is expired
-    if (new Date(result.sessionExpiresAt) < new Date()) {
-      // Clean up this expired session
-      await db.delete(sessions).where(eq(sessions.token, token));
-      
-      return NextResponse.json({ 
-        error: "Session has expired",
-        code: "EXPIRED_SESSION" 
-      }, { status: 401 });
-    }
-
-    // Return user info (without password) and session info
-    const response = {
-      user: {
-        id: result.userId,
-        email: result.userEmail,
-        name: result.userName,
-        role: result.userRole,
-        createdAt: result.userCreatedAt,
-        updatedAt: result.userUpdatedAt
-      },
-      session: {
-        id: result.sessionId,
-        token: result.sessionToken,
-        expiresAt: result.sessionExpiresAt,
-        createdAt: result.sessionCreatedAt
+    // Verify the Firebase ID token and get user data
+    const { user, decodedToken } = await AuthService.verifyIdToken(token);
+    
+    return NextResponse.json({
+      user: user,
+      tokenInfo: {
+        uid: decodedToken.uid,
+        email: decodedToken.email,
+        exp: decodedToken.exp,
+        iat: decodedToken.iat
       }
-    };
+    }, { status: 200 });
 
-    return NextResponse.json(response, { status: 200 });
+  } catch (error: any) {
+    console.error('Token verification error:', error);
+    
+    if (error.message === 'Invalid or expired token') {
+      return NextResponse.json({
+        error: "Invalid or expired token",
+        code: "INVALID_TOKEN"
+      }, { status: 401 });
+    }
+    
+    if (error.message === 'User profile not found') {
+      return NextResponse.json({
+        error: "User profile not found",
+        code: "PROFILE_NOT_FOUND"
+      }, { status: 404 });
+    }
 
-  } catch (error) {
-    console.error('GET current user error:', error);
-    return NextResponse.json({ 
-      error: 'Internal server error: ' + error 
+    return NextResponse.json({
+      error: 'Authentication verification failed: ' + error.message
     }, { status: 500 });
   }
 }

@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/db';
-import { sessions } from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { AuthService } from '@/lib/firebase';
 
 export async function POST(request: NextRequest) {
   try {
@@ -24,49 +22,38 @@ export async function POST(request: NextRequest) {
     }
 
     // Extract token
-    const token = authHeader.substring(7).trim();
+    const idToken = authHeader.substring(7).trim();
     
-    if (!token) {
+    if (!idToken) {
       return NextResponse.json({ 
         error: "Token is required",
         code: "MISSING_TOKEN" 
       }, { status: 401 });
     }
 
-    // Check if session exists
-    const existingSession = await db.select()
-      .from(sessions)
-      .where(eq(sessions.token, token))
-      .limit(1);
-
-    if (existingSession.length === 0) {
+    try {
+      // Verify the token is valid before logout
+      await AuthService.verifyIdToken(idToken);
+    } catch (error) {
       return NextResponse.json({ 
         error: "Invalid or expired session token",
         code: "INVALID_TOKEN" 
       }, { status: 401 });
     }
 
-    // Delete the session
-    const deletedSession = await db.delete(sessions)
-      .where(eq(sessions.token, token))
-      .returning();
-
-    if (deletedSession.length === 0) {
-      return NextResponse.json({ 
-        error: "Failed to logout. Session may have already been deleted",
-        code: "LOGOUT_FAILED" 
-      }, { status: 401 });
-    }
-
+    // Note: With Firebase Auth, logout is handled client-side.
+    // This endpoint serves as a validation point and for consistency.
+    // The actual logout (clearing the auth state) happens on the client.
+    
     return NextResponse.json({ 
       message: "Successfully logged out",
       success: true
     }, { status: 200 });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('POST logout error:', error);
     return NextResponse.json({ 
-      error: 'Internal server error: ' + error 
+      error: 'Internal server error: ' + error.message 
     }, { status: 500 });
   }
 }

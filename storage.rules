@@ -1,0 +1,29 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Images uploads - authenticated users can upload, everyone can read
+    match /images/{allPaths=**} {
+      allow read: if true; // Public read access for product images
+      allow write: if request.auth != null; // Authenticated users can upload
+    }
+    
+    // Product images - public read, admin write
+    match /products/{productId}/{allPaths=**} {
+      allow read: if true; // Public read access
+      allow write: if request.auth != null && 
+                      request.auth.token.admin == true; // Admin only write
+    }
+    
+    // User avatars - users can manage their own avatars
+    match /avatars/{userId}/{allPaths=**} {
+      allow read: if true; // Public read access
+      allow write: if request.auth != null && 
+                      request.auth.uid == userId; // User can manage own avatar
+    }
+    
+    // General uploads - authenticated users only
+    match /uploads/{allPaths=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}

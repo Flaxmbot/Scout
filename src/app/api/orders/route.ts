@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/db';
-import { orders } from '@/db/schema';
-import { eq, like, and, or, desc, asc } from 'drizzle-orm';
+import { OrdersService } from '@/lib/firebase/services';
+import { Order } from '@/lib/firebase/types';
 
 export async function GET(request: NextRequest) {
   try {
@@ -10,67 +9,31 @@ export async function GET(request: NextRequest) {
 
     // Single order fetch by ID
     if (id) {
-      if (!id || isNaN(parseInt(id))) {
-        return NextResponse.json({ 
-          error: "Valid ID is required",
-          code: "INVALID_ID" 
-        }, { status: 400 });
-      }
+      const order = await OrdersService.getById(id);
 
-      const order = await db.select()
-        .from(orders)
-        .where(eq(orders.id, parseInt(id)))
-        .limit(1);
-
-      if (order.length === 0) {
+      if (!order) {
         return NextResponse.json({ error: 'Order not found' }, { status: 404 });
       }
 
-      return NextResponse.json(order[0]);
+      return NextResponse.json(order);
     }
 
     // List orders with pagination, search, and filtering
     const limit = Math.min(parseInt(searchParams.get('limit') || '10'), 100);
-    const offset = parseInt(searchParams.get('offset') || '0');
     const search = searchParams.get('search');
     const status = searchParams.get('status');
     const sort = searchParams.get('sort') || 'createdAt';
     const order = searchParams.get('order') || 'desc';
 
-    let query = db.select().from(orders);
+    const result = await OrdersService.getAll({
+      limit,
+      search: search || undefined,
+      status: status || undefined,
+      sort: sort as any,
+      order: order as any
+    });
 
-    // Build where conditions
-    const conditions = [];
-
-    if (search) {
-      conditions.push(
-        or(
-          like(orders.customerName, `%${search}%`),
-          like(orders.customerEmail, `%${search}%`)
-        )
-      );
-    }
-
-    if (status) {
-      conditions.push(eq(orders.status, status));
-    }
-
-    if (conditions.length > 0) {
-      query = query.where(conditions.length === 1 ? conditions[0] : and(...conditions));
-    }
-
-    // Apply sorting
-    const sortColumn = sort === 'totalAmount' ? orders.totalAmount :
-                      sort === 'customerName' ? orders.customerName :
-                      sort === 'status' ? orders.status :
-                      orders.createdAt;
-
-    query = query.orderBy(order === 'asc' ? asc(sortColumn) : desc(sortColumn));
-
-    // Apply pagination
-    const results = await query.limit(limit).offset(offset);
-
-    return NextResponse.json(results);
+    return NextResponse.json(result.orders);
   } catch (error) {
     console.error('GET error:', error);
     return NextResponse.json({ 
@@ -119,33 +82,27 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(body.customerEmail.trim())) {
+    // Sanitize inputs
+    const orderData: Omit<Order, 'id' | 'createdAt'> = {
+      customerName: body.customerName.trim(),
+      customerEmail: body.customerEmail.trim(),
+      customerPhone: body.customerPhone.trim(),
+      shippingAddress: body.shippingAddress.trim(),
+      totalAmount: body.totalAmount,
+      status: body.status?.trim() || 'pending'
+    };
+
+    const newOrder = await OrdersService.create(orderData);
+
+    return NextResponse.json(newOrder, { status: 201 });
+  } catch (error) {
+    console.error('POST error:', error);
+    if (error instanceof Error && error.message === 'Invalid email format') {
       return NextResponse.json({ 
         error: "Valid email address is required",
         code: "INVALID_EMAIL" 
       }, { status: 400 });
     }
-
-    // Sanitize inputs
-    const sanitizedData = {
-      customerName: body.customerName.trim(),
-      customerEmail: body.customerEmail.trim().toLowerCase(),
-      customerPhone: body.customerPhone.trim(),
-      shippingAddress: body.shippingAddress.trim(),
-      totalAmount: body.totalAmount,
-      status: body.status?.trim() || 'pending',
-      createdAt: new Date().toISOString()
-    };
-
-    const newOrder = await db.insert(orders)
-      .values(sanitizedData)
-      .returning();
-
-    return NextResponse.json(newOrder[0], { status: 201 });
-  } catch (error) {
-    console.error('POST error:', error);
     return NextResponse.json({ 
       error: 'Internal server error: ' + error 
     }, { status: 500 });
@@ -157,25 +114,15 @@ export async function PUT(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
 
-    if (!id || isNaN(parseInt(id))) {
+    if (!id) {
       return NextResponse.json({ 
         error: "Valid ID is required",
         code: "INVALID_ID" 
       }, { status: 400 });
     }
 
-    // Check if order exists
-    const existingOrder = await db.select()
-      .from(orders)
-      .where(eq(orders.id, parseInt(id)))
-      .limit(1);
-
-    if (existingOrder.length === 0) {
-      return NextResponse.json({ error: 'Order not found' }, { status: 404 });
-    }
-
     const body = await request.json();
-    const updates: any = {};
+    const updates: Partial<Omit<Order, 'id' | 'createdAt'>> = {};
 
     // Validate and sanitize fields if provided
     if (body.customerName !== undefined) {
@@ -195,14 +142,7 @@ export async function PUT(request: NextRequest) {
           code: "INVALID_CUSTOMER_EMAIL" 
         }, { status: 400 });
       }
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(body.customerEmail.trim())) {
-        return NextResponse.json({ 
-          error: "Valid email address is required",
-          code: "INVALID_EMAIL" 
-        }, { status: 400 });
-      }
-      updates.customerEmail = body.customerEmail.trim().toLowerCase();
+      updates.customerEmail = body.customerEmail.trim();
     }
 
     if (body.customerPhone !== undefined) {
@@ -252,14 +192,22 @@ export async function PUT(request: NextRequest) {
       }, { status: 400 });
     }
 
-    const updated = await db.update(orders)
-      .set(updates)
-      .where(eq(orders.id, parseInt(id)))
-      .returning();
+    const updated = await OrdersService.update(id, updates);
 
-    return NextResponse.json(updated[0]);
+    return NextResponse.json(updated);
   } catch (error) {
     console.error('PUT error:', error);
+    if (error instanceof Error) {
+      if (error.message === 'Order not found') {
+        return NextResponse.json({ error: error.message }, { status: 404 });
+      }
+      if (error.message === 'Invalid email format') {
+        return NextResponse.json({ 
+          error: "Valid email address is required",
+          code: "INVALID_EMAIL" 
+        }, { status: 400 });
+      }
+    }
     return NextResponse.json({ 
       error: 'Internal server error: ' + error 
     }, { status: 500 });
@@ -271,33 +219,24 @@ export async function DELETE(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
 
-    if (!id || isNaN(parseInt(id))) {
+    if (!id) {
       return NextResponse.json({ 
         error: "Valid ID is required",
         code: "INVALID_ID" 
       }, { status: 400 });
     }
 
-    // Check if order exists
-    const existingOrder = await db.select()
-      .from(orders)
-      .where(eq(orders.id, parseInt(id)))
-      .limit(1);
-
-    if (existingOrder.length === 0) {
-      return NextResponse.json({ error: 'Order not found' }, { status: 404 });
-    }
-
-    const deleted = await db.delete(orders)
-      .where(eq(orders.id, parseInt(id)))
-      .returning();
+    const deleted = await OrdersService.delete(id);
 
     return NextResponse.json({
       message: 'Order deleted successfully',
-      deletedOrder: deleted[0]
+      deletedOrder: deleted
     });
   } catch (error) {
     console.error('DELETE error:', error);
+    if (error instanceof Error && error.message === 'Order not found') {
+      return NextResponse.json({ error: error.message }, { status: 404 });
+    }
     return NextResponse.json({ 
       error: 'Internal server error: ' + error 
     }, { status: 500 });

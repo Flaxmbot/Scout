@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -9,28 +9,61 @@ import { toast } from "sonner";
 import { Eye, EyeOff, User, Mail, Lock, Shield, Check, X, Chrome, Facebook } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/hooks/use-auth";
+
+interface SignUpFormData {
+  name: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+  acceptTerms: boolean;
+}
+
+interface SignUpFormErrors {
+  name?: string;
+  email?: string;
+  password?: string;
+  confirmPassword?: string;
+  acceptTerms?: string;
+}
+
+interface PasswordChecks {
+  length: boolean;
+  uppercase: boolean;
+  lowercase: boolean;
+  number: boolean;
+  special: boolean;
+}
 
 export default function SignUpPage() {
   const router = useRouter();
+  const { user, register } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      router.push('/');
+    }
+  }, [user, router]);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<SignUpFormData>({
     name: "",
     email: "",
     password: "",
     confirmPassword: "",
     acceptTerms: false,
   });
-  const [errors, setErrors] = useState({});
+  const [errors, setErrors] = useState<SignUpFormErrors>({});
 
-  const validateEmail = (email) => {
+  const validateEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
   };
 
-  const validatePasswordStrength = (password) => {
-    const checks = {
+  const validatePasswordStrength = (password: string): { checks: PasswordChecks; score: number } => {
+    const checks: PasswordChecks = {
       length: password.length >= 8,
       uppercase: /[A-Z]/.test(password),
       lowercase: /[a-z]/.test(password),
@@ -41,13 +74,13 @@ export default function SignUpPage() {
     return { checks, score };
   };
 
-  const getPasswordStrength = (score) => {
+  const getPasswordStrength = (score: number): { label: string; color: string } => {
     if (score < 2) return { label: "Weak", color: "bg-red-500" };
     if (score < 4) return { label: "Medium", color: "bg-yellow-500" };
     return { label: "Strong", color: "bg-green-500" };
   };
 
-  const handleInputChange = (field, value) => {
+  const handleInputChange = (field: keyof SignUpFormData, value: string | boolean): void => {
     setFormData(prev => ({ ...prev, [field]: value }));
     
     // Clear errors when user starts typing
@@ -56,8 +89,8 @@ export default function SignUpPage() {
     }
   };
 
-  const validateForm = () => {
-    const newErrors = {};
+  const validateForm = (): boolean => {
+    const newErrors: SignUpFormErrors = {};
 
     if (!formData.name.trim()) {
       newErrors.name = "Full name is required";
@@ -89,7 +122,7 @@ export default function SignUpPage() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     
     if (!validateForm()) {
@@ -100,34 +133,17 @@ export default function SignUpPage() {
     setIsLoading(true);
 
     try {
-      const response = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: formData.name,
-          email: formData.email,
-          password: formData.password,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        toast.success("Account created successfully! Please log in.");
-        router.push("/login");
-      } else {
-        toast.error(data.error || "Failed to create account");
-      }
-    } catch (error) {
-      toast.error("Something went wrong. Please try again.");
+      await register(formData.name, formData.email, formData.password);
+      toast.success("Account created successfully! Please log in.");
+      router.push("/login");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to create account");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleSocialSignup = (provider) => {
+  const handleSocialSignup = (provider: string): void => {
     toast.info(`${provider} signup coming soon!`);
   };
 
@@ -166,16 +182,16 @@ export default function SignUpPage() {
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                   <Input
-                    id="fullName"
+                    id="name"
                     type="text"
                     placeholder="Enter your full name"
-                    value={formData.fullName}
-                    onChange={(e) => handleInputChange("fullName", e.target.value)}
-                    className={`pl-10 ${errors.fullName ? "border-red-500" : ""}`}
+                    value={formData.name}
+                    onChange={(e) => handleInputChange("name", e.target.value)}
+                    className={`pl-10 ${errors.name ? "border-red-500" : ""}`}
                   />
                 </div>
-                {errors.fullName && (
-                  <p className="text-sm text-red-600">{errors.fullName}</p>
+                {errors.name && (
+                  <p className="text-sm text-red-600">{errors.name}</p>
                 )}
               </div>
 

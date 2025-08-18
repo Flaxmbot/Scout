@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -90,73 +91,29 @@ export default function AdminOrdersPage() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [bulkStatusUpdate, setBulkStatusUpdate] = useState('');
 
-  // Mock data - replace with actual API calls
   useEffect(() => {
-    const fetchOrders = async () => {
-      setLoading(true);
-      // Simulate API call
-      setTimeout(() => {
-        const mockOrders: Order[] = [
-          {
-            id: 'ORD-001',
-            customerName: 'John Smith',
-            customerEmail: 'john.smith@email.com',
-            customerPhone: '+1 (555) 123-4567',
-            orderDate: '2024-01-15T10:30:00Z',
-            totalAmount: 149.99,
-            status: 'processing',
-            itemsCount: 3,
-            shippingAddress: {
-              street: '123 Main St',
-              city: 'New York',
-              state: 'NY',
-              zipCode: '10001',
-              country: 'USA'
-            },
-            items: [
-              { id: '1', name: 'Wireless Headphones', quantity: 1, price: 99.99, image: '/placeholder.jpg' },
-              { id: '2', name: 'Phone Case', quantity: 2, price: 25.00, image: '/placeholder.jpg' }
-            ],
-            timeline: [
-              { status: 'Order Placed', date: '2024-01-15T10:30:00Z' },
-              { status: 'Payment Confirmed', date: '2024-01-15T10:35:00Z' },
-              { status: 'Processing Started', date: '2024-01-15T14:20:00Z' }
-            ],
-            notes: 'Customer requested expedited shipping'
-          },
-          {
-            id: 'ORD-002',
-            customerName: 'Sarah Johnson',
-            customerEmail: 'sarah.j@email.com',
-            orderDate: '2024-01-14T15:45:00Z',
-            totalAmount: 299.50,
-            status: 'shipped',
-            itemsCount: 1,
-            shippingAddress: {
-              street: '456 Oak Ave',
-              city: 'Los Angeles',
-              state: 'CA',
-              zipCode: '90210',
-              country: 'USA'
-            },
-            items: [
-              { id: '3', name: 'Laptop Stand', quantity: 1, price: 299.50, image: '/placeholder.jpg' }
-            ],
-            timeline: [
-              { status: 'Order Placed', date: '2024-01-14T15:45:00Z' },
-              { status: 'Payment Confirmed', date: '2024-01-14T15:50:00Z' },
-              { status: 'Processing Started', date: '2024-01-15T09:00:00Z' },
-              { status: 'Shipped', date: '2024-01-15T16:30:00Z', note: 'Tracking: 1Z999AA1234567890' }
-            ]
-          }
-        ];
-        setOrders(mockOrders);
-        setLoading(false);
-      }, 1000);
-    };
-
     fetchOrders();
   }, []);
+
+  const fetchOrders = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/admin/orders');
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch orders');
+      }
+      
+      const data = await response.json();
+      setOrders(data.orders || []);
+    } catch (error) {
+      console.error('Failed to fetch orders:', error);
+      toast.error('Failed to load orders. Please try again.');
+      setOrders([]);  // Set empty array on error
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredOrders = orders.filter(order => {
     const matchesSearch = 
@@ -204,44 +161,64 @@ export default function AdminOrdersPage() {
   };
 
   const handleStatusUpdate = async (orderId: string, newStatus: string) => {
-    setOrders(prev => prev.map(order => 
-      order.id === orderId 
-        ? { 
-            ...order, 
-            status: newStatus as any,
-            timeline: [
-              ...order.timeline,
-              {
-                status: `Status updated to ${newStatus}`,
-                date: new Date().toISOString()
-              }
-            ]
-          }
-        : order
-    ));
+    try {
+      const response = await fetch(`/api/admin/orders/${orderId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update order status');
+      }
+
+      const updatedOrder = await response.json();
+      
+      setOrders(prev => prev.map(order => 
+        order.id === orderId ? { ...order, status: newStatus as any } : order
+      ));
+      
+      toast.success('Order status updated successfully');
+    } catch (error) {
+      console.error('Failed to update order status:', error);
+      toast.error('Failed to update order status. Please try again.');
+    }
   };
 
   const handleBulkStatusUpdate = async () => {
     if (!bulkStatusUpdate || selectedOrders.length === 0) return;
     
-    setOrders(prev => prev.map(order => 
-      selectedOrders.includes(order.id)
-        ? { 
-            ...order, 
-            status: bulkStatusUpdate as any,
-            timeline: [
-              ...order.timeline,
-              {
-                status: `Bulk status update to ${bulkStatusUpdate}`,
-                date: new Date().toISOString()
-              }
-            ]
-          }
-        : order
-    ));
-    
-    setSelectedOrders([]);
-    setBulkStatusUpdate('');
+    try {
+      const response = await fetch('/api/admin/orders/bulk-update', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          orderIds: selectedOrders,
+          status: bulkStatusUpdate 
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update orders');
+      }
+
+      setOrders(prev => prev.map(order => 
+        selectedOrders.includes(order.id)
+          ? { ...order, status: bulkStatusUpdate as any }
+          : order
+      ));
+      
+      toast.success(`${selectedOrders.length} orders updated successfully`);
+      setSelectedOrders([]);
+      setBulkStatusUpdate('');
+    } catch (error) {
+      console.error('Failed to bulk update orders:', error);
+      toast.error('Failed to update orders. Please try again.');
+    }
   };
 
   const handleViewOrder = (order: Order) => {
@@ -456,8 +433,8 @@ export default function AdminOrdersPage() {
             <Download className="w-4 h-4 mr-2" />
             Export
           </Button>
-          <Button>
-            <RefreshCw className="w-4 h-4 mr-2" />
+          <Button onClick={fetchOrders} disabled={loading}>
+            <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
         </div>

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/db';
-import { categories } from '@/db/schema';
-import { eq, like, desc } from 'drizzle-orm';
+import { CategoriesService } from '@/lib/firebase/services';
+import { Category } from '@/lib/firebase/types';
 
 function generateSlug(name: string): string {
   return name.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
@@ -11,41 +10,35 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
+    const slug = searchParams.get('slug');
     
     // Get single category by ID
     if (id) {
-      if (!id || isNaN(parseInt(id))) {
-        return NextResponse.json({ 
-          error: "Valid ID is required",
-          code: "INVALID_ID" 
-        }, { status: 400 });
-      }
+      const category = await CategoriesService.getById(id);
 
-      const category = await db.select()
-        .from(categories)
-        .where(eq(categories.id, parseInt(id)))
-        .limit(1);
-
-      if (category.length === 0) {
+      if (!category) {
         return NextResponse.json({ error: 'Category not found' }, { status: 404 });
       }
 
-      return NextResponse.json(category[0]);
+      return NextResponse.json(category);
     }
 
-    // List categories with pagination and search
+    // Get single category by slug
+    if (slug) {
+      const category = await CategoriesService.getBySlug(slug);
+
+      if (!category) {
+        return NextResponse.json({ error: 'Category not found' }, { status: 404 });
+      }
+
+      return NextResponse.json(category);
+    }
+
+    // List categories with pagination
     const limit = Math.min(parseInt(searchParams.get('limit') || '10'), 100);
-    const offset = parseInt(searchParams.get('offset') || '0');
-    const search = searchParams.get('search');
-
-    let query = db.select().from(categories).orderBy(desc(categories.createdAt));
     
-    if (search) {
-      query = query.where(like(categories.name, `%${search}%`));
-    }
-    
-    const results = await query.limit(limit).offset(offset);
-    return NextResponse.json(results);
+    const result = await CategoriesService.getAll({ limit });
+    return NextResponse.json(result.categories);
 
   } catch (error) {
     console.error('GET error:', error);
@@ -58,10 +51,10 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, description } = body;
+    const { name, description, slug } = body;
 
     // Validate required fields
-    if (!name) {
+    if (!name || typeof name !== 'string' || !name.trim()) {
       return NextResponse.json({ 
         error: "Name is required",
         code: "MISSING_REQUIRED_FIELD" 
@@ -71,36 +64,26 @@ export async function POST(request: NextRequest) {
     // Sanitize inputs
     const sanitizedName = name.trim();
     const sanitizedDescription = description ? description.trim() : null;
+    const categorySlug = slug?.trim() || generateSlug(sanitizedName);
 
-    // Auto-generate slug
-    const slug = generateSlug(sanitizedName);
+    const categoryData: Omit<Category, 'id' | 'createdAt'> = {
+      name: sanitizedName,
+      slug: categorySlug,
+      description: sanitizedDescription
+    };
 
-    // Check if slug already exists
-    const existingCategory = await db.select()
-      .from(categories)
-      .where(eq(categories.slug, slug))
-      .limit(1);
+    const newCategory = await CategoriesService.create(categoryData);
 
-    if (existingCategory.length > 0) {
+    return NextResponse.json(newCategory, { status: 201 });
+
+  } catch (error) {
+    console.error('POST error:', error);
+    if (error instanceof Error && error.message === 'Category with this slug already exists') {
       return NextResponse.json({ 
         error: "Category with this name already exists",
         code: "DUPLICATE_SLUG" 
       }, { status: 400 });
     }
-
-    const newCategory = await db.insert(categories)
-      .values({
-        name: sanitizedName,
-        slug: slug,
-        description: sanitizedDescription,
-        createdAt: new Date().toISOString()
-      })
-      .returning();
-
-    return NextResponse.json(newCategory[0], { status: 201 });
-
-  } catch (error) {
-    console.error('POST error:', error);
     return NextResponse.json({ 
       error: 'Internal server error: ' + error 
     }, { status: 500 });
@@ -112,49 +95,35 @@ export async function PUT(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
 
-    if (!id || isNaN(parseInt(id))) {
+    if (!id) {
       return NextResponse.json({ 
         error: "Valid ID is required",
         code: "INVALID_ID" 
       }, { status: 400 });
     }
 
-    // Check if category exists
-    const existingCategory = await db.select()
-      .from(categories)
-      .where(eq(categories.id, parseInt(id)))
-      .limit(1);
-
-    if (existingCategory.length === 0) {
-      return NextResponse.json({ error: 'Category not found' }, { status: 404 });
-    }
-
     const body = await request.json();
-    const { name, description } = body;
+    const { name, description, slug } = body;
 
-    const updates: any = {};
+    const updates: Partial<Omit<Category, 'id' | 'createdAt'>> = {};
 
     if (name !== undefined) {
-      if (!name.trim()) {
+      if (!name || typeof name !== 'string' || !name.trim()) {
         return NextResponse.json({ 
           error: "Name cannot be empty",
           code: "INVALID_NAME" 
         }, { status: 400 });
       }
       updates.name = name.trim();
-      updates.slug = generateSlug(name.trim());
+      // Update slug based on name if slug not explicitly provided
+      if (!slug) {
+        updates.slug = generateSlug(name.trim());
+      }
+    }
 
-      // Check if new slug conflicts with existing category (excluding current one)
-      const conflictingCategory = await db.select()
-        .from(categories)
-        .where(eq(categories.slug, updates.slug))
-        .limit(1);
-
-      if (conflictingCategory.length > 0 && conflictingCategory[0].id !== parseInt(id)) {
-        return NextResponse.json({ 
-          error: "Category with this name already exists",
-          code: "DUPLICATE_SLUG" 
-        }, { status: 400 });
+    if (slug !== undefined) {
+      if (typeof slug === 'string') {
+        updates.slug = slug.trim();
       }
     }
 
@@ -162,15 +131,23 @@ export async function PUT(request: NextRequest) {
       updates.description = description ? description.trim() : null;
     }
 
-    const updated = await db.update(categories)
-      .set(updates)
-      .where(eq(categories.id, parseInt(id)))
-      .returning();
+    const updated = await CategoriesService.update(id, updates);
 
-    return NextResponse.json(updated[0]);
+    return NextResponse.json(updated);
 
   } catch (error) {
     console.error('PUT error:', error);
+    if (error instanceof Error) {
+      if (error.message === 'Category not found') {
+        return NextResponse.json({ error: error.message }, { status: 404 });
+      }
+      if (error.message === 'Category with this slug already exists') {
+        return NextResponse.json({ 
+          error: "Category with this name already exists",
+          code: "DUPLICATE_SLUG" 
+        }, { status: 400 });
+      }
+    }
     return NextResponse.json({ 
       error: 'Internal server error: ' + error 
     }, { status: 500 });
@@ -182,34 +159,33 @@ export async function DELETE(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
 
-    if (!id || isNaN(parseInt(id))) {
+    if (!id) {
       return NextResponse.json({ 
         error: "Valid ID is required",
         code: "INVALID_ID" 
       }, { status: 400 });
     }
 
-    // Check if category exists
-    const existingCategory = await db.select()
-      .from(categories)
-      .where(eq(categories.id, parseInt(id)))
-      .limit(1);
-
-    if (existingCategory.length === 0) {
-      return NextResponse.json({ error: 'Category not found' }, { status: 404 });
-    }
-
-    const deleted = await db.delete(categories)
-      .where(eq(categories.id, parseInt(id)))
-      .returning();
+    const deleted = await CategoriesService.delete(id);
 
     return NextResponse.json({
       message: 'Category deleted successfully',
-      deletedCategory: deleted[0]
+      deletedCategory: deleted
     });
 
   } catch (error) {
     console.error('DELETE error:', error);
+    if (error instanceof Error) {
+      if (error.message === 'Category not found') {
+        return NextResponse.json({ error: error.message }, { status: 404 });
+      }
+      if (error.message.includes('Cannot delete category that has products')) {
+        return NextResponse.json({ 
+          error: error.message,
+          code: "CATEGORY_HAS_PRODUCTS" 
+        }, { status: 400 });
+      }
+    }
     return NextResponse.json({ 
       error: 'Internal server error: ' + error 
     }, { status: 500 });

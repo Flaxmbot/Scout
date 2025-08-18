@@ -25,7 +25,7 @@ const products = [
     image: "https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/test-clones/8eef21f3-4a52-4ae0-bfcf-d495c2edc784-trendifymartclothing-com/assets/images/8_1-20.jpg?",
     hoverImage: "https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/test-clones/8eef21f3-4a52-4ae0-bfcf-d495c2edc784-trendifymartclothing-com/assets/images/8_6-21.jpg?",
     alt: "Executive Pocket Polo in white",
-    href: "#",
+    href: "/products/executive-pocket-polo-white",
   },
   {
     id: 2,
@@ -34,7 +34,7 @@ const products = [
     image: "https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/test-clones/8eef21f3-4a52-4ae0-bfcf-d495c2edc784-trendifymartclothing-com/assets/images/3_1-22.jpg?",
     hoverImage: "https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/test-clones/8eef21f3-4a52-4ae0-bfcf-d495c2edc784-trendifymartclothing-com/assets/images/3_8-23.jpg?",
     alt: "Executive Pocket Polo in blue",
-    href: "#",
+    href: "/products/executive-pocket-polo-blue",
   },
   {
     id: 3,
@@ -43,7 +43,7 @@ const products = [
     image: "https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/test-clones/8eef21f3-4a52-4ae0-bfcf-d495c2edc784-trendifymartclothing-com/assets/images/IMG_0498copy-24.jpg?",
     hoverImage: "https://slelguoygbfzlpylpxfs.supabase.co/storage/v1/object/public/test-clones/8eef21f3-4a52-4ae0-bfcf-d495c2edc784-trendifymartclothing-com/assets/images/IMG_0499copy-25.jpg?",
     alt: "Executive Pocket Polo in black",
-    href: "#",
+    href: "/products/executive-pocket-polo-black",
   },
 ];
 

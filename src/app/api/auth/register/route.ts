@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/db';
-import { users } from '@/db/schema';
-import { eq } from 'drizzle-orm';
-import bcrypt from 'bcrypt';
+import { AuthService } from '@/lib/firebase';
 
 export async function POST(request: NextRequest) {
   try {
@@ -53,43 +50,38 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Check if email already exists
-    const existingUser = await db.select()
-      .from(users)
-      .where(eq(users.email, email))
-      .limit(1);
+    // Register user with Firebase Auth
+    const { user } = await AuthService.register(email, password, name, role);
 
-    if (existingUser.length > 0) {
+    return NextResponse.json(user, { status: 201 });
+
+  } catch (error: any) {
+    console.error('Registration error:', error);
+    
+    // Handle Firebase Auth errors with proper status codes
+    if (error.message === 'Email already exists') {
       return NextResponse.json({ 
         error: "Email already exists",
         code: "EMAIL_EXISTS" 
       }, { status: 409 });
     }
+    
+    if (error.message === 'Invalid email format') {
+      return NextResponse.json({ 
+        error: "Invalid email format",
+        code: "INVALID_EMAIL" 
+      }, { status: 400 });
+    }
+    
+    if (error.message.includes('Password')) {
+      return NextResponse.json({ 
+        error: error.message,
+        code: "INVALID_PASSWORD" 
+      }, { status: 400 });
+    }
 
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 12);
-
-    // Create new user
-    const newUser = await db.insert(users)
-      .values({
-        email,
-        password: hashedPassword,
-        name,
-        role,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      })
-      .returning();
-
-    // Remove password from response
-    const { password: _, ...userWithoutPassword } = newUser[0];
-
-    return NextResponse.json(userWithoutPassword, { status: 201 });
-
-  } catch (error) {
-    console.error('POST error:', error);
     return NextResponse.json({ 
-      error: 'Internal server error: ' + error 
+      error: 'Registration failed: ' + error.message 
     }, { status: 500 });
   }
 }

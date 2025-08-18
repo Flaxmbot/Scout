@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import { Search, Filter, Download, Mail, Eye, ShoppingBag, Calendar, DollarSign, Users, TrendingUp, Phone, MapPin, Tag, MessageSquare, Plus, X, FileText, Star } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -60,59 +61,49 @@ export default function AdminCustomersPage() {
   const [newNote, setNewNote] = useState('');
   const [newTag, setNewTag] = useState('');
 
-  // Mock data - replace with actual API calls
   useEffect(() => {
-    const mockCustomers: Customer[] = [
-      {
-        id: '1',
-        name: 'John Smith',
-        email: 'john.smith@email.com',
-        phone: '+1 (555) 123-4567',
-        address: '123 Main St, New York, NY 10001',
-        registrationDate: '2023-01-15',
-        totalOrders: 8,
-        totalSpent: 1250.00,
-        lastOrderDate: '2024-01-10',
-        segment: 'VIP',
-        tags: ['premium', 'frequent-buyer']
-      },
-      {
-        id: '2',
-        name: 'Sarah Johnson',
-        email: 'sarah.j@email.com',
-        phone: '+1 (555) 987-6543',
-        registrationDate: '2023-03-22',
-        totalOrders: 4,
-        totalSpent: 320.00,
-        lastOrderDate: '2024-01-05',
-        segment: 'Loyal',
-        tags: ['loyal']
-      },
-      {
-        id: '3',
-        name: 'Mike Chen',
-        email: 'mike.chen@email.com',
-        registrationDate: '2023-11-10',
-        totalOrders: 2,
-        totalSpent: 89.99,
-        lastOrderDate: '2023-12-15',
-        segment: 'Active'
-      },
-      {
-        id: '4',
-        name: 'Emily Davis',
-        email: 'emily.davis@email.com',
-        registrationDate: '2024-01-08',
-        totalOrders: 0,
-        totalSpent: 0,
-        segment: 'New'
-      }
-    ];
-
-    setCustomers(mockCustomers);
-    setFilteredCustomers(mockCustomers);
-    setLoading(false);
+    fetchCustomers();
   }, []);
+
+  const fetchCustomers = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/admin/customers');
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch customers');
+      }
+      
+      const data = await response.json();
+      
+      // Transform API data to match the component's expected format
+      const transformedCustomers: Customer[] = data.customers.map((customer: any) => ({
+        id: customer.id,
+        name: customer.name,
+        email: customer.email,
+        phone: customer.phone,
+        address: customer.address,
+        registrationDate: customer.createdAt,
+        totalOrders: customer.analytics.totalOrders,
+        totalSpent: customer.analytics.totalSpent,
+        lastOrderDate: customer.analytics.lastOrderDate,
+        segment: customer.analytics.segment,
+        avatar: customer.avatar,
+        notes: customer.notes,
+        tags: customer.tags
+      }));
+      
+      setCustomers(transformedCustomers);
+      setFilteredCustomers(transformedCustomers);
+    } catch (error) {
+      console.error('Failed to fetch customers:', error);
+      toast.error('Failed to load customers. Please try again.');
+      setCustomers([]);
+      setFilteredCustomers([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     let filtered = customers.filter(customer => {
@@ -618,7 +609,7 @@ export default function AdminCustomersPage() {
                           placeholder="Add tag..."
                           value={newTag}
                           onChange={(e) => setNewTag(e.target.value)}
-                          size="sm"
+                          className="h-8"
                         />
                         <Button onClick={handleAddTag} size="sm">
                           <Plus className="w-4 h-4" />

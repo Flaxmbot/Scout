@@ -113,7 +113,7 @@ interface SortConfig {
 }
 
 export default function AdminProductsPage() {
-  const { toast } = useToast();
+  const { success: toastSuccess, error: toastError } = useToast();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -134,63 +134,57 @@ export default function AdminProductsPage() {
   const [showBulkActions, setShowBulkActions] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
-  // Mock data - replace with actual API calls
+  // Fetch real data from API
   useEffect(() => {
-    const mockProducts: Product[] = [
-      {
-        id: "1",
-        name: "Premium Headphones",
-        description: "High-quality wireless headphones with noise cancellation",
-        category: "Electronics",
-        price: 199.99,
-        salePrice: 149.99,
-        stock: 45,
-        status: "active",
-        image: "/api/placeholder/60/60",
-        createdAt: "2024-01-15T10:00:00Z",
-        lowStockThreshold: 10
-      },
-      {
-        id: "2",
-        name: "Organic Coffee Beans",
-        description: "Premium organic coffee beans from Colombia",
-        category: "Food & Beverage",
-        price: 24.99,
-        stock: 3,
-        status: "active",
-        image: "/api/placeholder/60/60",
-        createdAt: "2024-01-14T15:30:00Z",
-        lowStockThreshold: 5
-      },
-      {
-        id: "3",
-        name: "Yoga Mat Pro",
-        description: "Professional-grade yoga mat with excellent grip",
-        category: "Sports & Fitness",
-        price: 79.99,
-        salePrice: 59.99,
-        stock: 22,
-        status: "inactive",
-        image: "/api/placeholder/60/60",
-        createdAt: "2024-01-13T09:15:00Z",
-        lowStockThreshold: 15
-      }
-    ];
-
-    const mockCategories: Category[] = [
-      { id: "1", name: "Electronics", count: 45 },
-      { id: "2", name: "Food & Beverage", count: 23 },
-      { id: "3", name: "Sports & Fitness", count: 18 },
-      { id: "4", name: "Home & Garden", count: 32 },
-      { id: "5", name: "Fashion", count: 67 }
-    ];
-
-    setTimeout(() => {
-      setProducts(mockProducts);
-      setCategories(mockCategories);
-      setLoading(false);
-    }, 1000);
+    fetchData();
   }, []);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      
+      // Fetch products and categories in parallel
+      const [productsResponse, categoriesResponse] = await Promise.all([
+        fetch('/api/admin/products?limit=100'),
+        fetch('/api/categories')
+      ]);
+
+      if (productsResponse.ok) {
+        const productsData = await productsResponse.json();
+        // Transform Firebase data to match component interface
+        const transformedProducts = (productsData.products || productsData || []).map((product: any) => ({
+          id: product.id,
+          name: product.name,
+          description: product.description || '',
+          category: product.category,
+          price: product.price,
+          salePrice: product.salePrice,
+          stock: product.stockQuantity || product.stock || 0,
+          status: product.isActive ? "active" : "inactive",
+          image: product.imageUrl || "/api/placeholder/60/60",
+          createdAt: product.createdAt,
+          lowStockThreshold: product.lowStockThreshold || 10
+        }));
+        setProducts(transformedProducts);
+      }
+
+      if (categoriesResponse.ok) {
+        const categoriesData = await categoriesResponse.json();
+        // Transform categories data
+        const transformedCategories = (categoriesData || []).map((category: any) => ({
+          id: category.id,
+          name: category.name,
+          count: category.productCount || 0
+        }));
+        setCategories(transformedCategories);
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      toastError('Failed to fetch products data');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredProducts = useMemo(() => {
     let filtered = products.filter(product => {
@@ -213,6 +207,11 @@ export default function AdminProductsPage() {
     filtered.sort((a, b) => {
       const aValue = a[sortConfig.key];
       const bValue = b[sortConfig.key];
+      
+      // Handle null/undefined values
+      if (aValue == null && bValue == null) return 0;
+      if (aValue == null) return sortConfig.direction === "asc" ? -1 : 1;
+      if (bValue == null) return sortConfig.direction === "asc" ? 1 : -1;
       
       if (aValue < bValue) return sortConfig.direction === "asc" ? -1 : 1;
       if (aValue > bValue) return sortConfig.direction === "asc" ? 1 : -1;
@@ -268,35 +267,64 @@ export default function AdminProductsPage() {
     );
   };
 
-  const handleStatusToggle = (productId: string) => {
-    setProducts(prev => prev.map(product => 
-      product.id === productId 
-        ? { ...product, status: product.status === "active" ? "inactive" : "active" }
-        : product
-    ));
-    toast({
-      title: "Status Updated",
-      description: "Product status has been updated successfully."
-    });
+  const handleStatusToggle = async (productId: string) => {
+    try {
+      const product = products.find(p => p.id === productId);
+      if (!product) return;
+      
+      const newStatus = product.status === "active" ? "inactive" : "active";
+      const isActive = newStatus === "active";
+      
+      const response = await fetch(`/api/admin/products?id=${productId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          isActive
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to update product status');
+      }
+      
+      setProducts(prev => prev.map(product => 
+        product.id === productId 
+          ? { ...product, status: newStatus }
+          : product
+      ));
+      toastSuccess("Product status has been updated successfully.");
+    } catch (error) {
+      console.error('Error updating product status:', error);
+      toastError('Failed to update product status');
+    }
   };
 
-  const handleDelete = (productId: string) => {
-    setProducts(prev => prev.filter(p => p.id !== productId));
-    setDeleteConfirm(null);
-    toast({
-      title: "Product Deleted",
-      description: "Product has been deleted successfully."
-    });
+  const handleDelete = async (productId: string) => {
+    try {
+      const response = await fetch(`/api/admin/products?id=${productId}`, {
+        method: 'DELETE',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to delete product');
+      }
+      
+      setProducts(prev => prev.filter(p => p.id !== productId));
+      setDeleteConfirm(null);
+      toastSuccess("Product has been deleted successfully.");
+    } catch (error) {
+      console.error('Error deleting product:', error);
+      toastError('Failed to delete product');
+    }
   };
 
   const handleBulkDelete = () => {
     setProducts(prev => prev.filter(p => !selectedProducts.includes(p.id)));
     setSelectedProducts([]);
     setShowBulkActions(false);
-    toast({
-      title: "Products Deleted",
-      description: `${selectedProducts.length} products have been deleted.`
-    });
+    toastSuccess(`${selectedProducts.length} products have been deleted.`);
   };
 
   const exportToCSV = () => {
@@ -319,10 +347,7 @@ export default function AdminProductsPage() {
     a.download = "products.csv";
     a.click();
     
-    toast({
-      title: "Export Complete",
-      description: "Products have been exported to CSV."
-    });
+    toastSuccess("Products have been exported to CSV.");
   };
 
   if (loading) {
@@ -773,6 +798,7 @@ export default function AdminProductsPage() {
 }
 
 function ProductForm({ product, onClose }: { product?: Product; onClose: () => void }) {
+  const { success: toastSuccess } = useToast();
   const [formData, setFormData] = useState({
     name: product?.name || "",
     description: product?.description || "",
@@ -784,19 +810,57 @@ function ProductForm({ product, onClose }: { product?: Product; onClose: () => v
     status: product?.status || "active"
   });
 
-  const { toast } = useToast();
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Simulate API call
-    setTimeout(() => {
-      toast({
-        title: product ? "Product Updated" : "Product Added",
-        description: `${formData.name} has been ${product ? "updated" : "added"} successfully.`
-      });
+    try {
+      const requestData = {
+        name: formData.name,
+        description: formData.description,
+        category: formData.category,
+        price: formData.price,
+        salePrice: formData.salePrice || null,
+        stockQuantity: formData.stock,
+        isActive: formData.status === "active",
+        color: "default", // Add default values for required fields
+        size: "default",
+        isFeatured: false
+      };
+      
+      let response;
+      if (product) {
+        // Update existing product
+        response = await fetch(`/api/admin/products?id=${product.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestData),
+        });
+      } else {
+        // Create new product
+        response = await fetch('/api/admin/products', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestData),
+        });
+      }
+      
+      if (!response.ok) {
+        throw new Error(`Failed to ${product ? 'update' : 'create'} product`);
+      }
+      
+      toastSuccess(`${formData.name} has been ${product ? "updated" : "added"} successfully.`);
       onClose();
-    }, 1000);
+      
+      // Refresh the products list
+      window.location.reload();
+    } catch (error) {
+      console.error('Error submitting product:', error);
+      toastSuccess('Error submitting product. Please try again.');
+    }
   };
 
   return (
